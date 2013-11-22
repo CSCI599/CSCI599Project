@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.LineNumberTable;
@@ -32,11 +33,29 @@ public class CFG {
 
 	}
 
+	public ArrayList<Nodes> getChildren(Nodes node,
+			ArrayList<ArrayList<InstructionHandle>> edges) {
+		InstructionHandle nodeName = node.nodeName;
+		ArrayList<Nodes> children = new ArrayList<Nodes>();
+
+		for (int i = 0; i < edges.size(); i++) {
+			ArrayList<InstructionHandle> edge = edges.get(i);
+			
+			if (edge.get(0).equals(nodeName)) {
+				Nodes newNode = new Nodes(edge.get(1), nodeName);
+				children.add(newNode);
+			}
+
+		}
+
+		return children;
+	}
+
 	public ArrayList<CFG_Graph> cfgMaker(String dir, String inputClassFilename)
 			throws IOException {
 
 		SortedMap<Integer, InstructionHandle> g_statements = new TreeMap<Integer, InstructionHandle>();
-		String path = dir + inputClassFilename+".class";
+		String path = dir + inputClassFilename + ".class";
 		// System.out.println("Parsing " + path + ".");
 
 		JavaClass cls = null;
@@ -68,8 +87,7 @@ public class CFG {
 
 			// Create CFG.
 			// System.out.println("Creating CFG object.");
-			CFG cfg = new CFG(new InstructionList(mainMethod.getCode()
-					.getCode()));
+		
 			// System.out.println("CODE: \n\n");
 
 			String code = mainMethod.getCode().toString();
@@ -292,8 +310,7 @@ public class CFG {
 		return nodes;
 
 	}
-	
-	
+
 	public void traverseCFG(ArrayList<ArrayList<InstructionHandle>> internalCFG) {
 		for (int i = 0; i < internalCFG.size(); i++) {
 			ArrayList<InstructionHandle> edge = internalCFG.get(i);
