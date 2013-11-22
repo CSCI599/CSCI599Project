@@ -252,6 +252,7 @@ public class CFG {
 			LineNumberTable table = mainMethod.getCode().getLineNumberTable();
 
 			cfg_graph.lineNumberTable = table;
+			cfg_graph.localVariableTable = mainMethod.getCode().getLocalVariableTable();
 			for (InstructionHandle node : nodes) {
 				// System.out.println("table Size: " + table.getLength());
 				// System.out.println(table.getSourceLine(2));

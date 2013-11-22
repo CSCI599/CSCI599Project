@@ -3,6 +3,7 @@ package com.csci599.project;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.apache.bcel.classfile.LocalVariable;
 import org.apache.bcel.generic.InstructionHandle;
 
 public class MainClass {
@@ -12,6 +13,8 @@ public class MainClass {
 		System.out.println("CFG Size: " + graphs.size());
 		int i = 1;
 		for (CFG_Graph graph : graphs) {
+			LocalVariable[] localVariables = graph.localVariableTable.getLocalVariableTable();
+			
 			System.out.println("Graph " + i + " byte code mapping length: "
 					+ graph.byteCode_to_sourceCode_mapping.size());
 			i++;

@@ -5,6 +5,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.bcel.classfile.LineNumberTable;
+import org.apache.bcel.classfile.LocalVariableTable;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.InstructionHandle;
 
@@ -21,6 +22,7 @@ class CFG_Graph {
 	ArrayList<Nodes> dangerousEdges;
 	ArrayList<TestCaseToEdges> testCaseToEdge;
 	LineNumberTable lineNumberTable;
+	LocalVariableTable localVariableTable;
 
 	public CFG_Graph() {
 		servletName = "";
