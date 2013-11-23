@@ -15,6 +15,8 @@ class CFG_Graph {
 	ArrayList<Nodes> nodes;
 	ArrayList<ArrayList<InstructionHandle>> edges;
 	SortedMap<Integer, ArrayList<Nodes> > edgesMap;
+	SortedMap<Integer, ArrayList<InstructionHandle>> reachabilityList;
+	ArrayList<Reachability> canReachList;
 
 	SortedMap<Integer, Integer> byteCode_to_sourceCode_mapping;
 	ArrayList<LineHitsForEachServlet> servletStats;
@@ -25,11 +27,16 @@ class CFG_Graph {
 	ArrayList<TestCaseToEdges> testCaseToEdge;
 	LineNumberTable lineNumberTable;
 	LocalVariableTable localVariableTable;
+	public SortedMap<Integer, Nodes> nodesMap;
 
 	public CFG_Graph() {
 		servletName = "";
+		reachabilityList = new TreeMap<Integer, ArrayList<InstructionHandle>>();
+		canReachList = new ArrayList<Reachability>();
+
 		method = new Method();
 		nodes = new ArrayList<Nodes>();
+		nodesMap = new TreeMap<Integer, Nodes>();
 		edges = new ArrayList<ArrayList<InstructionHandle>>();
 		edgesMap = new TreeMap<Integer, ArrayList<Nodes>>();
 		byteCode_to_sourceCode_mapping = new TreeMap<Integer, Integer>();
