@@ -9,7 +9,7 @@ import org.apache.bcel.generic.InstructionHandle;
 public class MainClass {
 	public static void main(String[] args) throws IOException {
 		CFG cfg = new CFG();
-		ArrayList<CFG_Graph> graphs = cfg.cfgMaker("Example/", "Condition");
+		ArrayList<CFG_Graph> graphs = cfg.cfgMaker("bin/com/csci599/project/", "Condition");
 		System.out.println("CFG Size: " + graphs.size());
 		int i = 1;
 		for (CFG_Graph graph : graphs) {

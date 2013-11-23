@@ -12,8 +12,10 @@ import org.apache.bcel.generic.InstructionHandle;
 class CFG_Graph {
 	String servletName;
 	Method method;
-	ArrayList<InstructionHandle> nodes;
+	ArrayList<Nodes> nodes;
 	ArrayList<ArrayList<InstructionHandle>> edges;
+	SortedMap<Integer, ArrayList<Nodes> > edgesMap;
+
 	SortedMap<Integer, Integer> byteCode_to_sourceCode_mapping;
 	ArrayList<LineHitsForEachServlet> servletStats;
 	ArrayList<EdgesHit> edgesTraversed;
@@ -27,8 +29,9 @@ class CFG_Graph {
 	public CFG_Graph() {
 		servletName = "";
 		method = new Method();
-		nodes = new ArrayList<InstructionHandle>();
+		nodes = new ArrayList<Nodes>();
 		edges = new ArrayList<ArrayList<InstructionHandle>>();
+		edgesMap = new TreeMap<Integer, ArrayList<Nodes>>();
 		byteCode_to_sourceCode_mapping = new TreeMap<Integer, Integer>();
 		servletStats = new ArrayList<LineHitsForEachServlet>();
 		edgesTraversed = new ArrayList<EdgesHit>();

@@ -9,8 +9,10 @@ public class Condition {
 			if (d == 5) {
 				if (a == 6) {
 					System.out.println("A = 6");
-				} else {
+				} if(a == 7){
 					System.out.println("A != 6");
+					System.out.println("This is the line to execute");
+
 				}
 			} else {
 				if (a == 7) {

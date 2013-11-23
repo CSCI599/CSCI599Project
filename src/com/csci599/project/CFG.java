@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.LineNumberTable;
@@ -40,15 +39,33 @@ public class CFG {
 
 		for (int i = 0; i < edges.size(); i++) {
 			ArrayList<InstructionHandle> edge = edges.get(i);
-			
+
 			if (edge.get(0).equals(nodeName)) {
-				Nodes newNode = new Nodes(edge.get(1), nodeName);
+				Nodes newNode = new Nodes(edge.get(1));
 				children.add(newNode);
 			}
 
 		}
 
 		return children;
+	}
+
+	public ArrayList<Nodes> getParents(Nodes node,
+			ArrayList<ArrayList<InstructionHandle>> edges) {
+		InstructionHandle nodeName = node.nodeName;
+		ArrayList<Nodes> parents = new ArrayList<Nodes>();
+
+		for (int i = 0; i < edges.size(); i++) {
+			ArrayList<InstructionHandle> edge = edges.get(i);
+
+			if (edge.get(1)!=null && edge.get(1).equals(nodeName)) {
+				Nodes newNode = new Nodes(edge.get(0));
+				parents.add(newNode);
+			}
+
+		}
+
+		return parents;
 	}
 
 	public ArrayList<CFG_Graph> cfgMaker(String dir, String inputClassFilename)
@@ -72,10 +89,12 @@ public class CFG {
 		// System.out.println("Searching for entry method:");
 		Method mainMethod = null;
 		ArrayList<CFG_Graph> cfg_graphList = new ArrayList<CFG_Graph>();
-
+		
 		for (Method m : cls.getMethods()) {
+			g_statements.clear();
 			// if ("_jspService".equals(m.getName())) {
 			mainMethod = m;
+
 			// break;
 			// }
 			// }
@@ -87,45 +106,23 @@ public class CFG {
 
 			// Create CFG.
 			// System.out.println("Creating CFG object.");
-		
-			// System.out.println("CODE: \n\n");
 
-			String code = mainMethod.getCode().toString();
+			// System.out.println("CODE: \n\n");
 
 			InstructionList instList = new InstructionList(mainMethod.getCode()
 					.getCode());
 
-			// byte[] byteCode = mainMethod.getCode().getCode();
-			// Instruction[] inst = instList.getInstructions();
-			// System.out.println("Number of instructions: "+inst.length);
-			// System.out.println(code);
-
-			ArrayList<String> statements = getArrayListFromCode(code);
-			ArrayList<Integer> lineNumbers = new ArrayList<Integer>();
-			for (int i = 1; i < statements.size(); i++) {
-
-				String line = statements.get(i);
-				String[] parts = line.split("\t");
-				String[] subPart = parts[0].split(":");
-				// System.out.println("Adding "+subPart[0]);
-				try {
-					if (!subPart[0].equalsIgnoreCase("")) {
-						lineNumbers.add(Integer.parseInt(subPart[0]));
-					}
-				} catch (NumberFormatException ex) {
-					// System.out.println(subPart[0] + " is not a number");
-				}
-			}
-
+			int[] instructionPositions = instList.getInstructionPositions();
 			for (int i = 0; i < instList.size(); i++) {
-				InstructionHandle handle = instList.findHandle(lineNumbers
-						.get(i));
+
+				InstructionHandle handle = instList
+						.findHandle(instructionPositions[i]);
 				Integer lineNum = handle.getPosition();
 
 				g_statements.put(lineNum, handle);
-
+				
 			}
-
+			//System.exit(0);
 			// Map<InstructionHandle, InstructionHandle> internalCFG = new
 			// TreeMap<InstructionHandle, InstructionHandle>();
 			FileWriter fwr = new FileWriter(dir + "/Dotty/"
@@ -139,9 +136,12 @@ public class CFG {
 			// System.out.println("entry -> 0;");
 			fwr.write("\n" + "entry -> 0;");
 
+			//System.out.println("Method "+mainMethod.getName());
+
 			for (SortedMap.Entry<Integer, InstructionHandle> entry : g_statements
 					.entrySet()) {
 				nodes.add(entry.getValue());
+				//System.out.println("Added "+nodes.get(nodes.size()-1));
 				if (entry.getValue().getNext() != null) {
 					nodes.add(entry.getValue().getNext());
 				}
@@ -199,18 +199,11 @@ public class CFG {
 
 						}
 					} else {
-						// System.out.println(entry.getValue().getPosition()+
-						// " -> "+entry.getValue().getNext().getPosition()+";");
+
 						fwr.write("\n" + entry.getValue().getPosition()
 								+ " -> "
 								+ entry.getValue().getNext().getPosition()
 								+ ";");
-
-						InstructionHandle han = entry.getValue();
-						InstructionHandle han2 = entry.getValue();
-
-						// System.out.println(han.getClass());
-						// internalCFG.put(han, han2);
 
 						graph.add(new ArrayList<InstructionHandle>(Arrays
 								.asList(entry.getValue(), entry.getValue()
@@ -218,11 +211,9 @@ public class CFG {
 
 					}
 				} else {
-					// System.out.println(entry.getValue().getPosition()+
-					// " -> exit;");
+
 					fwr.write("\n" + entry.getValue().getPosition()
 							+ " -> exit;");
-					// internalCFG.put(entry.getValue(), null);
 
 					graph.add(new ArrayList<InstructionHandle>(Arrays.asList(
 							entry.getValue(), null)));
@@ -243,8 +234,24 @@ public class CFG {
 
 			CFG_Graph cfg_graph = new CFG_Graph();
 			cfg_graph.edges = graph;
+			
+			SortedMap<Integer, ArrayList<Nodes> > edgesMap = new TreeMap<Integer, ArrayList<Nodes>>();
+
 			nodes = sortNodeList(nodes);
-			cfg_graph.nodes = nodes;
+			ArrayList<Nodes> nodesList = new ArrayList<Nodes>();
+
+			for(InstructionHandle node : nodes){
+				Nodes newNode = new Nodes(node);
+				ArrayList<Nodes> children = getChildren(newNode, graph);
+				ArrayList<Nodes> parents = getChildren(newNode, graph);
+				newNode.parents = parents;
+				newNode.children = children;
+				nodesList.add(newNode);
+				edgesMap.put(node.getPosition(), children);
+				
+			}
+			cfg_graph.nodes = nodesList;
+			cfg_graph.edgesMap = edgesMap;
 			cfg_graph.servletName = inputClassFilename;
 			cfg_graph.method = mainMethod;
 
@@ -252,7 +259,8 @@ public class CFG {
 			LineNumberTable table = mainMethod.getCode().getLineNumberTable();
 
 			cfg_graph.lineNumberTable = table;
-			cfg_graph.localVariableTable = mainMethod.getCode().getLocalVariableTable();
+			cfg_graph.localVariableTable = mainMethod.getCode()
+					.getLocalVariableTable();
 			for (InstructionHandle node : nodes) {
 				// System.out.println("table Size: " + table.getLength());
 				// System.out.println(table.getSourceLine(2));

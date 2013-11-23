@@ -6,12 +6,12 @@ import org.apache.bcel.generic.InstructionHandle;
 
 public class Nodes {
 	public InstructionHandle nodeName;
-	public InstructionHandle parent;
-	public ArrayList<Integer> visitedNodes;
+	public ArrayList<Nodes> parents;
+	public ArrayList<Nodes> children;
 
-	Nodes(InstructionHandle nodeName, InstructionHandle parent) {
+	Nodes(InstructionHandle nodeName) {
 		this.nodeName = nodeName;
-		this.parent = parent;
-		visitedNodes = new ArrayList<Integer>();
+		this.parents = new ArrayList<Nodes>();
+		this.children = new ArrayList<Nodes>();
 	}
 }
