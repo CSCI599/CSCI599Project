@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.bcel.classfile.LocalVariable;
-import org.apache.bcel.generic.BranchInstruction;
-import org.apache.bcel.generic.GOTO;
 import org.apache.bcel.generic.InstructionHandle;
 
 public class MainClass {
