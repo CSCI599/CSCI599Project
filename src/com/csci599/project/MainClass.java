@@ -16,8 +16,8 @@ public class MainClass {
 		System.out.println("CFG Size: " + graphs.size());
 		int i = 1;
 		for (CFG_Graph graph : graphs) {
-			LocalVariable[] localVariables = graph.localVariableTable
-					.getLocalVariableTable();
+			//LocalVariable[] localVariables = graph.localVariableTable
+			//		.getLocalVariableTable();
 
 			System.out.println("Graph " + i + " byte code mapping length: "
 					+ graph.byteCode_to_sourceCode_mapping.size());
@@ -47,20 +47,21 @@ public class MainClass {
 					.println("Code: " + graph.method.getCode().toString(true));
 		}
 
-		ArrayList<DependencyInformation> dependencyList = cfg
-				.getConditionDependencyForLineNumber(graphs.get(1), "main", 189);
-		System.out
-				.println("Node at position 189 depends on the following conditions ");
+		int node = 317;
+		System.out.println("Total Nodes: " + graphs.get(1).nodes.size());
+		ArrayList<InstructionHandle> dependencyList = cfg
+				.getDependencyInformation(graphs.get(1),node);
+		System.out.println(node + " can be reached by "
+				+ graphs.get(1).reachabilityList.get(node).size()
+				+ " other nodes");
+		System.out.println("Node at position " + node
+				+ " depends on the following conditions ");
 		System.out.println("Total dependency conditions: "
 				+ dependencyList.size());
-		for (DependencyInformation dependency : dependencyList) {
-			System.out.print("\n" + dependency.dependencyNode);
-			if (dependency.if_else) {
-				System.out.print("\tIf Part");
-			} else {
-				System.out.print("\tElse Part");
-			}
+		for (InstructionHandle dependency : dependencyList) {
+			System.out.print("\n" + dependency);			
 		}
+		/*
 		LocalVariable[] localVariables = graphs.get(1).localVariableTable
 				.getLocalVariableTable();
 		System.out.println();
@@ -71,5 +72,11 @@ public class MainClass {
 					+ " Signature: " + localVariables[j].getSignature()
 					+ " Start PC: " + localVariables[j].getStartPC());
 		}
+		
+		
+		System.out.println("New Analysis");
+		cfg.getPath(graphs.get(1).nodesMap, node);
+		*/
 	}
+	
 }

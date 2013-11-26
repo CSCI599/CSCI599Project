@@ -19,6 +19,7 @@ import org.apache.bcel.generic.GOTO;
 import org.apache.bcel.generic.IfInstruction;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.InstructionList;
+import org.apache.bcel.generic.InvokeInstruction;
 import org.apache.bcel.generic.RETURN;
 import org.apache.bcel.generic.Select;
 
@@ -55,85 +56,23 @@ public class CFG {
 			ArrayList<InstructionHandle> edgeToTest = graph.edges.get(i);
 			if (edgeToTest.get(0) != null
 					&& edgeToTest.get(0).getPosition() == target.getPosition()) {
-			
+
 				return graph.edges.get(i - 1).get(0);
 			}
 		}
 		return null;
 	}
 
-	public boolean isReachableInCFG(CFG_Graph graph, Integer from, Integer to){
-		if(graph.reachabilityList.get(from) == null){
+	public boolean isReachableInCFG(CFG_Graph graph, Integer from, Integer to) {
+		if (graph.reachabilityList.get(from) == null) {
 			return false;
 		}
-		for(InstructionHandle handle : graph.reachabilityList.get(to)){
-			if(handle.getPosition() == from){
+		for (InstructionHandle handle : graph.reachabilityList.get(to)) {
+			if (handle.getPosition() == from) {
 				return true;
 			}
 		}
 		return false;
-	}
-	
-	public ArrayList<DependencyInformation> getConditionDependencyForLineNumber(
-			CFG_Graph graph, String methodName, int lineNumber) {
-		ArrayList<DependencyInformation> dependencyList = new ArrayList<DependencyInformation>();
-		int edge_count = 0;
-		for (ArrayList<InstructionHandle> edge : graph.edges) {
-			edge_count++;
-			if (edge.get(0).getPosition() > lineNumber) {
-				System.out.println("Crossed the required node...breaking");
-				break;
-			}
-
-			DependencyInformation dependency = new DependencyInformation();
-			if (edge.get(0).getInstruction() instanceof BranchInstruction && isReachableInCFG(graph, edge.get(0).getPosition(), lineNumber)) {
-				BranchInstruction instruction = (BranchInstruction) edge.get(0)
-						.getInstruction();
-				InstructionHandle target = instruction.getTarget();
-				int position = target.getPosition();
-				if (position > lineNumber) {
-					// TODO
-					// Instruction at lineNumber depends on if part of
-					// "instruction"
-					dependency.dependencyNode = edge.get(0);
-					dependency.if_else = true;
-				} else {
-					// Check if previous instruction of target is GOTO (End of
-					// if-else
-					// condition check. If previous instruction is GOTO and
-					// target of GOTO>lineNumber, the line depends on else part
-					// of the if condition)
-					// System.out.println("Position < LineNumber");
-
-					InstructionHandle nodeToCheck = findPreviousInstruction(
-							graph, target);
-
-						if (nodeToCheck != null) {
-						if (nodeToCheck.getInstruction() instanceof GOTO) {
-							GOTO gotoInstruction = (GOTO) nodeToCheck
-									.getInstruction();
-							if (gotoInstruction.getTarget().getPosition() > lineNumber) {
-								// Instruction at lineNumber depends else
-								// part
-								// of "instruction"
-								dependency.dependencyNode = edge.get(0);
-								dependency.if_else = false;
-							}
-						}
-					}
-
-				}
-			}
-			if (dependency.dependencyNode != null
-					&& !(checkIfNodeAlreadyExistsInDependencyList(dependency,
-							dependencyList))
-					&& !(dependency.dependencyNode.getInstruction() instanceof GOTO)) {
-				dependencyList.add(dependency);
-
-			}
-		}
-
-		return dependencyList;
 	}
 
 	public ArrayList<Nodes> getChildren(Nodes node,
@@ -172,6 +111,209 @@ public class CFG {
 		return parents;
 	}
 
+	public void getPath(SortedMap<Integer, Nodes> nodesMap, int to) {
+		int current = to;
+		System.out.println("Parents: " + nodesMap.get(current).parents.size());
+		ArrayList<InstructionHandle> dependencyList = new ArrayList<InstructionHandle>();
+		while (current != 0) {
+			InstructionHandle currentInst = nodesMap.get(current).parents
+					.get(0).nodeName;
+
+			current = nodesMap.get(current).parents.get(0).nodeName
+					.getPosition();
+			if (currentInst.getInstruction() instanceof BranchInstruction) {
+				dependencyList.add(currentInst);
+			}
+		}
+		//System.out.println(to + " depends on " + dependencyList.size()
+		//		+ " other instructions");
+		//for (InstructionHandle handle : dependencyList) {
+		//	System.out.println(handle);
+		//}
+	}
+
+	public ArrayList<InstructionHandle> getDependencyInformation(
+			CFG_Graph graph, int lineNumber) {
+		ArrayList<InstructionHandle> reachabilityList = graph.reachabilityList
+				.get(lineNumber);
+		ArrayList<InstructionHandle> reachabilityByBranchStatements = new ArrayList<InstructionHandle>();
+		ArrayList<InstructionHandle> alwaysExecutedBranches = new ArrayList<InstructionHandle>();
+		ArrayList<InstructionHandle> conditionsToSatisfy = new ArrayList<InstructionHandle>();
+		if (reachabilityList == null) {
+			return null;
+		}
+		for (int i = 0; i < reachabilityList.size(); i++) {
+			if (reachabilityList.get(i).getInstruction() instanceof BranchInstruction
+					&& !((reachabilityList.get(i).getInstruction()) instanceof GOTO)) {
+				reachabilityByBranchStatements.add(reachabilityList.get(i));
+			}
+		}
+
+		for (InstructionHandle handle : reachabilityByBranchStatements) {
+			if (checkTargetOnEveryPath(graph.edges, 0, handle.getPosition())) {
+				alwaysExecutedBranches.add(handle);
+			}
+		}
+
+		/*
+		 * System.out.println("Following branches are always executed: "); for
+		 * (InstructionHandle handle : alwaysExecutedBranches) {
+		 * System.out.println(handle); }
+		 */
+		if (alwaysExecutedBranches.size() > 1) {
+			int minDiff = 1000;
+			InstructionHandle closestInstruction = alwaysExecutedBranches
+					.get(0);
+			for (InstructionHandle handle : alwaysExecutedBranches) {
+				if (lineNumber - handle.getPosition() < minDiff) {
+					minDiff = lineNumber - handle.getPosition();
+					closestInstruction = handle;
+				}
+			}
+
+			ArrayList<InstructionHandle> reachabilityByBranchStatementsForClosestBranch = new ArrayList<InstructionHandle>();
+			ArrayList<InstructionHandle> reachabilityListForClosestBranch = graph.reachabilityList
+					.get(closestInstruction.getPosition());
+
+			for (int i = 0; i < reachabilityListForClosestBranch.size(); i++) {
+				if (reachabilityListForClosestBranch.get(i).getInstruction() instanceof BranchInstruction
+						&& !((reachabilityListForClosestBranch.get(i)
+								.getInstruction()) instanceof GOTO)) {
+					reachabilityByBranchStatementsForClosestBranch
+							.add(reachabilityListForClosestBranch.get(i));
+				}
+			}
+
+			reachabilityByBranchStatements
+					.removeAll(reachabilityByBranchStatementsForClosestBranch);
+			reachabilityByBranchStatements.add(closestInstruction);
+
+			conditionsToSatisfy.addAll(reachabilityByBranchStatements);
+		} else if (alwaysExecutedBranches.size() <= 1) {
+
+			for (InstructionHandle branch : reachabilityByBranchStatements) {
+				if (!checkTargetOnEveryPath(graph.edges, branch.getPosition(),
+						lineNumber)) {
+					conditionsToSatisfy.add(branch);
+					// System.out.println(branch.getPosition()+" does not always reach "+lineNumber);
+				}
+			}
+
+			ArrayList<InstructionHandle> independentConditions = new ArrayList<InstructionHandle>();
+			for (int i = reachabilityByBranchStatements.size() - 1; i > 0; i--) {
+				if (checkTargetOnEveryPath(graph.edges,
+						reachabilityByBranchStatements.get(i).getPosition(),
+						reachabilityByBranchStatements.get(i - 1).getPosition())) {
+					independentConditions.add(reachabilityByBranchStatements
+							.get(i));
+					// System.out.println(reachabilityByBranchStatements.get(i).getPosition()+" will always reach "+reachabilityByBranchStatements.get(i-1).getPosition());
+
+				} else {
+					// System.out.println(reachabilityByBranchStatements.get(i).getPosition()+" does not always reach "+reachabilityByBranchStatements.get(i-1).getPosition());
+					// Ignore branch
+				}
+			}
+
+			conditionsToSatisfy.removeAll(independentConditions);
+
+		}
+		return conditionsToSatisfy;
+	}
+
+	public boolean checkTargetOnEveryPath(
+			ArrayList<ArrayList<InstructionHandle>> edges, int from, int target) {
+		// System.out.println("New Run");
+		// System.out.println("Starting at: " + from);
+		ArrayList<Integer> searchQueue = new ArrayList<Integer>();
+		ArrayList<Integer> visitedQueue = new ArrayList<Integer>();
+
+		boolean isAlwaysFound = true;
+		searchQueue.add(from);
+
+		boolean found = false;
+		boolean neverFound = true;
+		int pathsCount = 0;
+		// System.out.println();
+		while (!searchQueue.isEmpty()) {
+
+			// System.out.print(searchQueue.get(0) + " , ");
+
+			// System.out.println("Search Queue Size: " + searchQueue.size());
+			if (searchQueue.get(0) == target) {
+				pathsCount++;
+
+				found = true;
+				neverFound = false;
+
+				// System.out.println("Target found at: " + searchQueue.get(0));
+
+			} else if (searchQueue.get(0) == -1) {
+				if (!found) {
+					// System.out
+					// .println("End node found before target at position: "
+					// + searchQueue.get(0));
+					isAlwaysFound = false;// System.exit(0);
+
+					return false;
+				} else {
+					// System.out
+					// .println("End node found After target at position: "
+					// + searchQueue.get(0));
+					// isAlwaysFound = false;// System.exit(0);
+					// return false;
+
+					// System.out.println("Target Found: "+((InvokeInstruction)(searchQueue.get(0).getInstruction())).getMethodName(cp));
+
+					searchQueue.remove(0);
+					found = false;
+					if (searchQueue.isEmpty()) {
+						// System.out
+						// .println("Search Queue Empty. All possible nodes traversed.");
+						break;
+					}
+				}
+				pathsCount++;
+
+				break;
+
+			}
+
+			ArrayList<Integer> children = new ArrayList<Integer>();
+			for (int i = 0; i < edges.size(); i++) {
+				ArrayList<InstructionHandle> edge = edges.get(i);
+
+				if (edge.get(0).getPosition() == searchQueue.get(0)) {
+					if (edge.get(1) != null) {
+						if (!checkIfNodeHasBeenVisited(visitedQueue,
+								edge.get(1))
+								&& (!checkIfNodeIsAlreadyInSearchQueue(
+										searchQueue, edge.get(1).getPosition()))) {
+
+							children.add(edge.get(1).getPosition());
+							// System.out.println("Added children");
+						}
+					} else {
+						children.add(-1);
+					}
+				}
+
+			}
+
+			visitedQueue.add(searchQueue.get(0));
+			searchQueue.remove(0);
+			searchQueue.addAll(0, children);
+			// System.out.println("Search Queue Size after iteration: "
+			// + searchQueue.size());
+
+		}
+		if (neverFound) {
+			// System.out.println("Target never found for this run");
+		}
+		// System.out.println("Total paths: " + pathsCount);
+		// System.out.println();
+		return isAlwaysFound;
+	}
+
 	public ArrayList<CFG_Graph> cfgMaker(String dir, String inputClassFilename)
 			throws IOException {
 
@@ -191,7 +333,7 @@ public class CFG {
 
 		ClassGen cg = new ClassGen(cls);
 		ConstantPoolGen cp = cg.getConstantPool();
-		
+
 		// Search for main method.
 		// System.out.println("Searching for entry method:");
 		Method mainMethod = null;
@@ -385,10 +527,21 @@ public class CFG {
 				}
 			}
 			cfg_graph.byteCode_to_sourceCode_mapping = byteCode_to_sourceCode_mapping;
+
+			for (int i = 0; i < cfg_graph.edges.size(); i++) {
+				if (cfg_graph.edges.get(i).get(1) != null) {
+					if (cfg_graph.edges.get(i).get(0).getPosition() > cfg_graph.edges
+							.get(i).get(0).getPosition()) {
+						cfg_graph.edges.remove(i);
+						System.out.println("Edge Removed");
+					}
+				}
+			}
 			cfg_graph.reachabilityList = generateReachabilityInformation(
 					cfg_graph.edges, cfg_graph.nodes);
 			cfg_graphList.add(cfg_graph);
-			cfg_graph.reachabilityList = generateReachabilityInformation(cfg_graph.edges, cfg_graph.nodes);
+			cfg_graph.reachabilityList = generateReachabilityInformation(
+					cfg_graph.edges, cfg_graph.nodes);
 			cfg_graph.constantPool = cp;
 		}
 		return cfg_graphList;
@@ -420,9 +573,9 @@ public class CFG {
 						if (edge.get(1) != null) {
 							if (edge.get(1).getPosition() == searchQueue.get(0)
 									.getPosition()) {
-								if (!checkIfNodeIsAlreadyInSearchQueue(
+								if (!checkIfNodeIsAlreadyInSearchQueue2(
 										searchQueue, edge.get(0).getPosition())) {
-									if (!checkIfNodeHasBeenVisited(
+									if (!checkIfNodeHasBeenVisited2(
 											visitedNodes, edge.get(0))) {
 										searchQueue.add(edge.get(0));
 									}
@@ -436,8 +589,9 @@ public class CFG {
 				searchQueue.remove(0);
 			}
 
-			reachList.put(objReachability.reachability.get(0).getPosition(), objReachability.reachability);
-			
+			reachList.put(objReachability.reachability.get(0).getPosition(),
+					objReachability.reachability);
+
 			reachabilityList.add(objReachability);
 			nodesList.remove(0);
 
@@ -446,73 +600,7 @@ public class CFG {
 		return reachList;
 	}
 
-	
-	//Need to FIX LATER
-	public ArrayList<Reachability> generateCanReachInformation(
-			ArrayList<ArrayList<InstructionHandle>> edges,
-			ArrayList<InstructionHandle> nodes) {
-		ArrayList<Reachability> reachabilityList = new ArrayList<Reachability>();
-		ArrayList<InstructionHandle> visitedNodes = new ArrayList<InstructionHandle>();
-
-		ArrayList<InstructionHandle> nodesList = (ArrayList<InstructionHandle>) nodes
-				.clone();
-		// System.out.println("Total Nodes: " + nodesList.size());
-		while (!nodesList.isEmpty()) {
-			visitedNodes = new ArrayList<InstructionHandle>();
-			ArrayList<InstructionHandle> searchQueue = new ArrayList<InstructionHandle>();
-			searchQueue.add(nodesList.get(0));
-
-			Reachability objReachability = new Reachability();
-			// System.out.println("Examining: "+nodesList.get(0).getPosition());
-			while (!searchQueue.isEmpty()) {
-				// System.out.println("Examining: "
-				// + searchQueue.get(0).getPosition());
-				for (int j = 0; j < edges.size(); j++) {
-					ArrayList<InstructionHandle> edge = edges.get(j);
-					if (edge.size() > 1) {
-						if (edge.get(1) != null) {
-							if (edge.get(0).getPosition() == searchQueue.get(0)
-									.getPosition()) {
-								if (!checkIfNodeIsAlreadyInSearchQueue(
-										searchQueue, edge.get(1).getPosition())) {
-									if (!checkIfNodeHasBeenVisited(
-											visitedNodes, edge.get(1))) {
-										searchQueue.add(edge.get(1));
-									}
-								}
-							}
-						}
-					}
-				}
-				objReachability.reachability.add(searchQueue.get(0));
-				visitedNodes.add(searchQueue.get(0));
-				searchQueue.remove(0);
-			}
-
-			reachabilityList.add(objReachability);
-			nodesList.remove(0);
-
-		}
-
-		System.out.println("Prepared Reachability, total nodes = "
-				+ reachabilityList.size());
-		for (int i = 0; i < reachabilityList.size(); i++) {
-			Reachability objReachability = reachabilityList.get(i);
-			ArrayList<InstructionHandle> row = objReachability.reachability; // System.out.println();
-			if (row.size() > 0) {
-				// System.out.println("Size of row: " + row.size());
-				System.out.print("\nNode " + row.get(0).getPosition()
-						+ " can reach: ");
-				for (int j = 0; j < row.size(); j++) {
-					System.out.print(row.get(j).getPosition() + " , ");
-				} //
-					// System.out.println();
-			}
-		}
-		return reachabilityList;
-	}
-
-	public boolean checkIfNodeHasBeenVisited(
+	public boolean checkIfNodeHasBeenVisited2(
 			ArrayList<InstructionHandle> visitedNodes,
 			InstructionHandle instructionHandle) {
 		for (int i = 0; i < visitedNodes.size(); i++) {
@@ -526,12 +614,36 @@ public class CFG {
 		return false;
 	}
 
-	public boolean checkIfNodeIsAlreadyInSearchQueue(
+	public boolean checkIfNodeIsAlreadyInSearchQueue2(
 			ArrayList<InstructionHandle> searchQueue, int position) {
 		for (int i = 0; i < searchQueue.size(); i++) {
 			// System.out.println("POSITION Matching: "+position+" with "+searchQueue.get(0)
 			// .getPosition());
 			if (searchQueue.get(i).getPosition() == position) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean checkIfNodeHasBeenVisited(ArrayList<Integer> visitedNodes,
+			InstructionHandle instructionHandle) {
+		for (int i = 0; i < visitedNodes.size(); i++) {
+
+			if (visitedNodes.get(i) == instructionHandle.getPosition()) {
+				// System.out.println(visitedNodes.get(i).getPosition()+" has already been visited");
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean checkIfNodeIsAlreadyInSearchQueue(
+			ArrayList<Integer> searchQueue, int position) {
+		for (int i = 0; i < searchQueue.size(); i++) {
+			// System.out.println("POSITION Matching: "+position+" with "+searchQueue.get(0)
+			// .getPosition());
+			if (searchQueue.get(i) == position) {
 				return true;
 			}
 		}
