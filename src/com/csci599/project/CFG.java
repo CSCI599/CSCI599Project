@@ -13,6 +13,8 @@ import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.LineNumberTable;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.BranchInstruction;
+import org.apache.bcel.generic.ClassGen;
+import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.GOTO;
 import org.apache.bcel.generic.IfInstruction;
 import org.apache.bcel.generic.InstructionHandle;
@@ -187,6 +189,9 @@ public class CFG {
 			System.exit(1);
 		}
 
+		ClassGen cg = new ClassGen(cls);
+		ConstantPoolGen cp = cg.getConstantPool();
+		
 		// Search for main method.
 		// System.out.println("Searching for entry method:");
 		Method mainMethod = null;
@@ -384,6 +389,7 @@ public class CFG {
 					cfg_graph.edges, cfg_graph.nodes);
 			cfg_graphList.add(cfg_graph);
 			cfg_graph.reachabilityList = generateReachabilityInformation(cfg_graph.edges, cfg_graph.nodes);
+			cfg_graph.constantPool = cp;
 		}
 		return cfg_graphList;
 

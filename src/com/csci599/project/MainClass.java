@@ -61,6 +61,15 @@ public class MainClass {
 				System.out.print("\tElse Part");
 			}
 		}
-
+		LocalVariable[] localVariables = graphs.get(1).localVariableTable
+				.getLocalVariableTable();
+		System.out.println();
+		System.out.println("Local Variables used in main method: ");
+		for (int j = 0; j < localVariables.length; j++) {
+			System.out.println("Name: " + localVariables[j].getName()
+					+ " Index: " + localVariables[j].getIndex()
+					+ " Signature: " + localVariables[j].getSignature()
+					+ " Start PC: " + localVariables[j].getStartPC());
+		}
 	}
 }

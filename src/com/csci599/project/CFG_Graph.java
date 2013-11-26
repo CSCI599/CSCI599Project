@@ -7,16 +7,18 @@ import java.util.TreeMap;
 import org.apache.bcel.classfile.LineNumberTable;
 import org.apache.bcel.classfile.LocalVariableTable;
 import org.apache.bcel.classfile.Method;
+import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.InstructionHandle;
 
 class CFG_Graph {
 	String servletName;
 	Method method;
 	ArrayList<Nodes> nodes;
-	ArrayList<ArrayList<InstructionHandle>> edges;
-	SortedMap<Integer, ArrayList<Nodes> > edgesMap;
-	SortedMap<Integer, ArrayList<InstructionHandle>> reachabilityList;
+	ArrayList<ArrayList<InstructionHandle>> edges; //Inner list is of size 2. Check for nulls (EXIT) in TO part.
+	SortedMap<Integer, ArrayList<Nodes> > edgesMap; //Map from node position to list of children.
+	SortedMap<Integer, ArrayList<InstructionHandle>> reachabilityList; //Map from node to list of nodes that can reach it.
 	ArrayList<Reachability> canReachList;
+	ConstantPoolGen constantPool;
 
 	SortedMap<Integer, Integer> byteCode_to_sourceCode_mapping;
 	ArrayList<LineHitsForEachServlet> servletStats;
@@ -27,9 +29,10 @@ class CFG_Graph {
 	ArrayList<TestCaseToEdges> testCaseToEdge;
 	LineNumberTable lineNumberTable;
 	LocalVariableTable localVariableTable;
-	public SortedMap<Integer, Nodes> nodesMap;
+	SortedMap<Integer, Nodes> nodesMap;//Map from node position to node
 
 	public CFG_Graph() {
+		constantPool = null;
 		servletName = "";
 		reachabilityList = new TreeMap<Integer, ArrayList<InstructionHandle>>();
 		canReachList = new ArrayList<Reachability>();

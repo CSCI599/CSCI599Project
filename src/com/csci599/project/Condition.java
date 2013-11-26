@@ -9,7 +9,8 @@ public class Condition {
 			if (d == 5) {
 				if (a == 6) {
 					System.out.println("A = 6");
-				} if(a == 7){
+				}
+				if (a == 7) {
 					System.out.println("A != 6");
 				}
 			} else {
@@ -26,10 +27,10 @@ public class Condition {
 				System.out.println("E != 8");
 			}
 		}
-		
-		if (f == 3 && g == 4) {
+
+		if (f >= 3 && g <= 4) {
 			if (h == 5) {
-				e=n+1*(a/4);
+				e = n + 1 * (a / 4);
 				if (e == 6) {
 					System.out.println("E = 6");
 				} else {
@@ -50,7 +51,28 @@ public class Condition {
 				System.out.println("E != 8");
 			}
 		}
+		System.out.println("Start of WHILE Loop");
+		int x = 1;
+		while (x < 10) {
+			System.out.println("This is X WHILE: " + x);
+			x++;
+		}
 
-		Reporter.reporter();
+		x = 1;
+		System.out.println("Start of DO WHILE Loop");
+		do {
+			System.out.println("This is X DO WHILE: " + x);
+			x++;
+		} while (x < 10);
+
+		System.out.println("Start of FOR Loop");
+		for (x = 1; x < 10; x++) {
+			System.out.println("This is X FOR: " + x);
+			if(x == 8){
+				break;
+			}
+		}
+		System.out.println("This is the end");
+		//Reporter.reporter();
 	}
 }
