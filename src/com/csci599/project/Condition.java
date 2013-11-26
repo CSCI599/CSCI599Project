@@ -12,13 +12,13 @@ public class Condition {
 				}
 				if (a == 7) {
 					System.out.println("A != 6");
-					System.out.println("This is the line to execute");
 				}
 			} else {
 				if (a == 7) {
 					System.out.println("A = 7");
 				} else {
 					System.out.println("A != 7");
+					System.out.println("This is the line to execute");
 				}
 			}
 		} else {

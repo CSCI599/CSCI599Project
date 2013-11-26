@@ -125,11 +125,11 @@ public class CFG {
 				dependencyList.add(currentInst);
 			}
 		}
-		//System.out.println(to + " depends on " + dependencyList.size()
-		//		+ " other instructions");
-		//for (InstructionHandle handle : dependencyList) {
-		//	System.out.println(handle);
-		//}
+		// System.out.println(to + " depends on " + dependencyList.size()
+		// + " other instructions");
+		// for (InstructionHandle handle : dependencyList) {
+		// System.out.println(handle);
+		// }
 	}
 
 	public ArrayList<InstructionHandle> getDependencyInformation(
@@ -154,12 +154,12 @@ public class CFG {
 				alwaysExecutedBranches.add(handle);
 			}
 		}
-
-		/*
-		 * System.out.println("Following branches are always executed: "); for
-		 * (InstructionHandle handle : alwaysExecutedBranches) {
-		 * System.out.println(handle); }
-		 */
+/*
+		System.out.println("Following branches are always executed: ");
+		for (InstructionHandle handle : alwaysExecutedBranches) {
+			System.out.println(handle);
+		}
+*/
 		if (alwaysExecutedBranches.size() > 1) {
 			int minDiff = 1000;
 			InstructionHandle closestInstruction = alwaysExecutedBranches
@@ -195,7 +195,11 @@ public class CFG {
 				if (!checkTargetOnEveryPath(graph.edges, branch.getPosition(),
 						lineNumber)) {
 					conditionsToSatisfy.add(branch);
-					// System.out.println(branch.getPosition()+" does not always reach "+lineNumber);
+				//	System.out.println(branch.getPosition()
+				//			+ " does not always reach " + lineNumber);
+				}else{
+				//	System.out.println(branch.getPosition()
+				//			+ " will always reach " + lineNumber);
 				}
 			}
 
@@ -206,14 +210,22 @@ public class CFG {
 						reachabilityByBranchStatements.get(i - 1).getPosition())) {
 					independentConditions.add(reachabilityByBranchStatements
 							.get(i));
-					// System.out.println(reachabilityByBranchStatements.get(i).getPosition()+" will always reach "+reachabilityByBranchStatements.get(i-1).getPosition());
+					//System.out.println(reachabilityByBranchStatements.get(i)
+					//		.getPosition()
+					//		+ " will always reach "
+					//		+ reachabilityByBranchStatements.get(i - 1)
+					//				.getPosition());
 
 				} else {
-					// System.out.println(reachabilityByBranchStatements.get(i).getPosition()+" does not always reach "+reachabilityByBranchStatements.get(i-1).getPosition());
+					//System.out.println(reachabilityByBranchStatements.get(i)
+					//		.getPosition()
+					//		+ " does not always reach "
+					//		+ reachabilityByBranchStatements.get(i - 1)
+					//				.getPosition());
 					// Ignore branch
 				}
 			}
-
+			System.out.println(independentConditions.size()+" independent conditions out of "+reachabilityByBranchStatements.size());
 			conditionsToSatisfy.removeAll(independentConditions);
 
 		}
@@ -223,7 +235,7 @@ public class CFG {
 	public boolean checkTargetOnEveryPath(
 			ArrayList<ArrayList<InstructionHandle>> edges, int from, int target) {
 		// System.out.println("New Run");
-		// System.out.println("Starting at: " + from);
+		//System.out.println("Starting at: " + from);
 		ArrayList<Integer> searchQueue = new ArrayList<Integer>();
 		ArrayList<Integer> visitedQueue = new ArrayList<Integer>();
 
@@ -236,30 +248,30 @@ public class CFG {
 		// System.out.println();
 		while (!searchQueue.isEmpty()) {
 
-			// System.out.print(searchQueue.get(0) + " , ");
+			 //System.out.print(searchQueue.get(0) + " , ");
 
-			// System.out.println("Search Queue Size: " + searchQueue.size());
+			 //System.out.println("Search Queue Size: " + searchQueue.size());
 			if (searchQueue.get(0) == target) {
 				pathsCount++;
 
 				found = true;
 				neverFound = false;
 
-				// System.out.println("Target found at: " + searchQueue.get(0));
+				 //System.out.println("Target found at: " + searchQueue.get(0));
 
 			} else if (searchQueue.get(0) == -1) {
 				if (!found) {
-					// System.out
-					// .println("End node found before target at position: "
-					// + searchQueue.get(0));
+					 //System.out
+					 //.println("End node found before target at position: "
+					 //+ searchQueue.get(0));
 					isAlwaysFound = false;// System.exit(0);
 
 					return false;
 				} else {
-					// System.out
-					// .println("End node found After target at position: "
-					// + searchQueue.get(0));
-					// isAlwaysFound = false;// System.exit(0);
+					 //System.out
+					 //.println("End node found After target at position: "
+					 //+ searchQueue.get(0));
+					 isAlwaysFound = false;// System.exit(0);
 					// return false;
 
 					// System.out.println("Target Found: "+((InvokeInstruction)(searchQueue.get(0).getInstruction())).getMethodName(cp));

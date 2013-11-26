@@ -47,7 +47,7 @@ public class MainClass {
 					.println("Code: " + graph.method.getCode().toString(true));
 		}
 
-		int node = 317;
+		int node = 107;
 		System.out.println("Total Nodes: " + graphs.get(1).nodes.size());
 		ArrayList<InstructionHandle> dependencyList = cfg
 				.getDependencyInformation(graphs.get(1),node);
