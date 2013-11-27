@@ -47,7 +47,8 @@ public class MainClass {
 					.println("Code: " + graph.method.getCode().toString(true));
 		}
 
-		int node = 107;
+		int node = 79;
+		
 		System.out.println("Total Nodes: " + graphs.get(1).nodes.size());
 		ArrayList<InstructionHandle> dependencyList = cfg
 				.getDependencyInformation(graphs.get(1), node);
@@ -61,6 +62,7 @@ public class MainClass {
 		for (InstructionHandle dependency : dependencyList) {
 			System.out.print("\n" + dependency);
 		}
+		
 		/*
 		 * LocalVariable[] localVariables = graphs.get(1).localVariableTable
 		 * .getLocalVariableTable(); System.out.println();
@@ -79,6 +81,7 @@ public class MainClass {
 		// for(Nodes nodes : graphs.get(1).nodes){
 		// System.out.println(nodes.nodeName);
 		// }
+		
 		System.out.println();
 		System.out.println("Conditions: ");
 		ArrayList<DependencyInformation> depList = cfg.dependencyAdapter(
@@ -97,6 +100,12 @@ public class MainClass {
 			System.out.println();
 		}
 
+		//System.out.println();
+		//System.out.println("==================CONDITION CHECK===================");
+		//System.out.println(cfg.checkTargetOnEveryPath(graphs.get(1).edges, 0, 111));
 	}
+	
+	
+	
 
 }

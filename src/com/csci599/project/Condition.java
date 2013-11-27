@@ -18,7 +18,6 @@ public class Condition {
 					System.out.println("A = 7");
 				} else {
 					System.out.println("A != 7");
-					System.out.println("This is the line to execute");
 				}
 			}
 		} else {
@@ -36,6 +35,7 @@ public class Condition {
 					System.out.println("E = 6");
 				} else {
 					System.out.println("E != 6");
+					System.out.println("This is the line to execute");
 				}
 			} else {
 				if (e == 7) {

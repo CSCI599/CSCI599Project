@@ -157,15 +157,17 @@ public class CFG {
 		}
 
 		for (InstructionHandle handle : reachabilityByBranchStatements) {
+			//System.out.println("Checking " + handle.getPosition());
 			if (checkTargetOnEveryPath(graph.edges, 0, handle.getPosition())) {
 				alwaysExecutedBranches.add(handle);
 			}
 		}
-		/*
-		 * System.out.println("Following branches are always executed: "); for
-		 * (InstructionHandle handle : alwaysExecutedBranches) {
-		 * System.out.println(handle); }
-		 */
+
+		System.out.println("Following branches are always executed: ");
+		for (InstructionHandle handle : alwaysExecutedBranches) {
+			System.out.println(handle);
+		}
+
 		if (alwaysExecutedBranches.size() > 1) {
 			int minDiff = 1000;
 			InstructionHandle closestInstruction = alwaysExecutedBranches
@@ -201,11 +203,11 @@ public class CFG {
 				if (!checkTargetOnEveryPath(graph.edges, branch.getPosition(),
 						lineNumber)) {
 					conditionsToSatisfy.add(branch);
-					// System.out.println(branch.getPosition()
-					// + " does not always reach " + lineNumber);
+					//System.out.println(branch.getPosition()
+					//		+ " does not always reach " + lineNumber);
 				} else {
-					// System.out.println(branch.getPosition()
-					// + " will always reach " + lineNumber);
+					//System.out.println(branch.getPosition()
+					//		+ " will always reach " + lineNumber);
 				}
 			}
 
@@ -216,18 +218,18 @@ public class CFG {
 						reachabilityByBranchStatements.get(i - 1).getPosition())) {
 					independentConditions.add(reachabilityByBranchStatements
 							.get(i));
-					// System.out.println(reachabilityByBranchStatements.get(i)
-					// .getPosition()
-					// + " will always reach "
-					// + reachabilityByBranchStatements.get(i - 1)
-					// .getPosition());
+					//System.out.println(reachabilityByBranchStatements.get(i)
+					//		.getPosition()
+					//		+ " will always reach "
+					//		+ reachabilityByBranchStatements.get(i - 1)
+					//				.getPosition());
 
 				} else {
-					// System.out.println(reachabilityByBranchStatements.get(i)
-					// .getPosition()
-					// + " does not always reach "
-					// + reachabilityByBranchStatements.get(i - 1)
-					// .getPosition());
+					//System.out.println(reachabilityByBranchStatements.get(i)
+					//		.getPosition()
+					//		+ " does not always reach "
+					//		+ reachabilityByBranchStatements.get(i - 1)
+					//				.getPosition());
 					// Ignore branch
 				}
 			}
@@ -329,16 +331,17 @@ public class CFG {
 		// System.out.println("Starting at: " + from);
 		ArrayList<Integer> searchQueue = new ArrayList<Integer>();
 		ArrayList<Integer> visitedQueue = new ArrayList<Integer>();
-
+		//System.out.println("Target = " + target);
 		boolean isAlwaysFound = true;
 		searchQueue.add(from);
 
 		boolean found = false;
 		boolean neverFound = true;
 		int pathsCount = 0;
+		boolean exitFound = false;
 		// System.out.println();
 		while (!searchQueue.isEmpty()) {
-
+			//System.out.println("Current Start: " + searchQueue.get(0));
 			// System.out.print(searchQueue.get(0) + " , ");
 
 			// System.out.println("Search Queue Size: " + searchQueue.size());
@@ -347,31 +350,49 @@ public class CFG {
 
 				found = true;
 				neverFound = false;
+				
+				if(exitFound){
+					return false;
+				}else{
+					found = false;
+					exitFound = false;
+				}
+				searchQueue.remove(0);
 
+				if (searchQueue.isEmpty()) {
+					//System.out
+					//		.println("Search Queue Empty. All possible nodes traversed.");
+					return true;
+				}
 				// System.out.println("Target found at: " + searchQueue.get(0));
 
 			} else if (searchQueue.get(0) == -1) {
+				exitFound = true;
+				
 				if (!found) {
-					// System.out
-					// .println("End node found before target at position: "
-					// + searchQueue.get(0));
+					//System.out
+					//		.println("End node found before target at position: "
+					//				+ searchQueue.get(0));
 					isAlwaysFound = false;// System.exit(0);
 
 					return false;
 				} else {
-					// System.out
-					// .println("End node found After target at position: "
-					// + searchQueue.get(0));
-					isAlwaysFound = false;// System.exit(0);
+					//System.out
+					//		.println("End node found After target at position: "
+					//				+ searchQueue.get(0));
+					// isAlwaysFound = false;// System.exit(0);
 					// return false;
 
 					// System.out.println("Target Found: "+((InvokeInstruction)(searchQueue.get(0).getInstruction())).getMethodName(cp));
 
 					searchQueue.remove(0);
+					//System.out.println("Target found.");
+					//System.out.println("Starting new path from "
+					//		+ searchQueue.get(0));
 					found = false;
 					if (searchQueue.isEmpty()) {
-						// System.out
-						// .println("Search Queue Empty. All possible nodes traversed.");
+						//System.out
+						//		.println("Search Queue Empty. All possible nodes traversed.");
 						break;
 					}
 				}
@@ -393,7 +414,6 @@ public class CFG {
 										searchQueue, edge.get(1).getPosition()))) {
 
 							children.add(edge.get(1).getPosition());
-							// System.out.println("Added children");
 						}
 					} else {
 						children.add(-1);
@@ -405,15 +425,17 @@ public class CFG {
 			visitedQueue.add(searchQueue.get(0));
 			searchQueue.remove(0);
 			searchQueue.addAll(0, children);
+			//System.out.println("Added " + children.size() + " children");
+
 			// System.out.println("Search Queue Size after iteration: "
 			// + searchQueue.size());
 
 		}
 		if (neverFound) {
-			// System.out.println("Target never found for this run");
+			//System.out.println("Target never found for this run");
 		}
-		// System.out.println("Total paths: " + pathsCount);
-		// System.out.println();
+		//System.out.println("Total paths: " + pathsCount);
+		//System.out.println();
 		return isAlwaysFound;
 	}
 
