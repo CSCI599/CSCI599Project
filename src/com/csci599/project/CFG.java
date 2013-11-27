@@ -11,17 +11,24 @@ import java.util.TreeMap;
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.LineNumberTable;
+import org.apache.bcel.classfile.LocalVariableTable;
 import org.apache.bcel.classfile.Method;
+import org.apache.bcel.generic.BIPUSH;
 import org.apache.bcel.generic.BranchInstruction;
 import org.apache.bcel.generic.ClassGen;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.GOTO;
+import org.apache.bcel.generic.ICONST;
+import org.apache.bcel.generic.ILOAD;
 import org.apache.bcel.generic.IfInstruction;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.InstructionList;
 import org.apache.bcel.generic.InvokeInstruction;
+import org.apache.bcel.generic.LocalVariableInstruction;
 import org.apache.bcel.generic.RETURN;
 import org.apache.bcel.generic.Select;
+
+import com.sun.org.apache.bcel.internal.classfile.LocalVariable;
 
 public class CFG {
 	protected static final String header = "digraph control_flow_graph {\n\n\tnode [shape = rectangle]; entry exit;\n\tnode [shape = circle];\n\n";
@@ -42,7 +49,7 @@ public class CFG {
 
 		for (DependencyInformation dep : dependencyList) {
 			if (dep.dependencyNode.equals(dependency.dependencyNode)
-					&& (dep.if_else == dependency.if_else)) {
+					&& (dep.true_false == dependency.true_false)) {
 				return true;
 			}
 		}
@@ -154,12 +161,11 @@ public class CFG {
 				alwaysExecutedBranches.add(handle);
 			}
 		}
-/*
-		System.out.println("Following branches are always executed: ");
-		for (InstructionHandle handle : alwaysExecutedBranches) {
-			System.out.println(handle);
-		}
-*/
+		/*
+		 * System.out.println("Following branches are always executed: "); for
+		 * (InstructionHandle handle : alwaysExecutedBranches) {
+		 * System.out.println(handle); }
+		 */
 		if (alwaysExecutedBranches.size() > 1) {
 			int minDiff = 1000;
 			InstructionHandle closestInstruction = alwaysExecutedBranches
@@ -195,11 +201,11 @@ public class CFG {
 				if (!checkTargetOnEveryPath(graph.edges, branch.getPosition(),
 						lineNumber)) {
 					conditionsToSatisfy.add(branch);
-				//	System.out.println(branch.getPosition()
-				//			+ " does not always reach " + lineNumber);
-				}else{
-				//	System.out.println(branch.getPosition()
-				//			+ " will always reach " + lineNumber);
+					// System.out.println(branch.getPosition()
+					// + " does not always reach " + lineNumber);
+				} else {
+					// System.out.println(branch.getPosition()
+					// + " will always reach " + lineNumber);
 				}
 			}
 
@@ -210,32 +216,117 @@ public class CFG {
 						reachabilityByBranchStatements.get(i - 1).getPosition())) {
 					independentConditions.add(reachabilityByBranchStatements
 							.get(i));
-					//System.out.println(reachabilityByBranchStatements.get(i)
-					//		.getPosition()
-					//		+ " will always reach "
-					//		+ reachabilityByBranchStatements.get(i - 1)
-					//				.getPosition());
+					// System.out.println(reachabilityByBranchStatements.get(i)
+					// .getPosition()
+					// + " will always reach "
+					// + reachabilityByBranchStatements.get(i - 1)
+					// .getPosition());
 
 				} else {
-					//System.out.println(reachabilityByBranchStatements.get(i)
-					//		.getPosition()
-					//		+ " does not always reach "
-					//		+ reachabilityByBranchStatements.get(i - 1)
-					//				.getPosition());
+					// System.out.println(reachabilityByBranchStatements.get(i)
+					// .getPosition()
+					// + " does not always reach "
+					// + reachabilityByBranchStatements.get(i - 1)
+					// .getPosition());
 					// Ignore branch
 				}
 			}
-			System.out.println(independentConditions.size()+" independent conditions out of "+reachabilityByBranchStatements.size());
+			System.out.println(independentConditions.size()
+					+ " independent conditions out of "
+					+ reachabilityByBranchStatements.size());
 			conditionsToSatisfy.removeAll(independentConditions);
 
 		}
 		return conditionsToSatisfy;
 	}
 
+	public VariableValues getVariablesForCondition(InstructionHandle condition,
+			LocalVariableTable table, ArrayList<Nodes> nodes) {
+		org.apache.bcel.classfile.LocalVariable[] localVariables = table
+				.getLocalVariableTable();
+		InstructionHandle conditionInstruction1 = null;
+		InstructionHandle conditionInstruction2 = null;
+		for (int i = 0; i < nodes.size(); i++) {
+			if (nodes.get(i).nodeName.getPosition() == condition.getPosition()) {
+				conditionInstruction1 = nodes.get(i - 1).nodeName;
+				conditionInstruction2 = nodes.get(i - 2).nodeName;
+				break;
+			}
+		}
+		/*
+		 * if(conditionInstruction1 !=null && conditionInstruction2 != null){
+		 * System.out.println(condition);
+		 * System.out.println(conditionInstruction1);
+		 * System.out.println(conditionInstruction2); }
+		 */
+		Number value = null;
+		if (conditionInstruction1.getInstruction() instanceof BIPUSH) {
+			value = ((BIPUSH) conditionInstruction1.getInstruction())
+					.getValue();
+
+		} else if (conditionInstruction1.getInstruction() instanceof ICONST) {
+			value = ((ICONST) conditionInstruction1.getInstruction())
+					.getValue();
+
+		}
+		// System.out.println("Value : "+value);
+
+		String variableName = "";
+		if (conditionInstruction2.getInstruction() instanceof LocalVariableInstruction) {
+			int index = ((LocalVariableInstruction) conditionInstruction2
+					.getInstruction()).getIndex();
+			// System.out.println(conditionInstruction2
+			// +" defines variable at index: "+index);
+			for (org.apache.bcel.classfile.LocalVariable var : localVariables) {
+				if (var.getIndex() == index) {
+					// System.out.println("Variable Name: "+var.getName());
+					variableName = var.getName();
+					break;
+				}
+			}
+		}
+		// System.out.println(variableName+" has the value: "+value);
+		VariableValues varVal = new VariableValues();
+		varVal.variableName = variableName;
+		varVal.value = value;
+
+		return varVal;
+	}
+
+	public ArrayList<DependencyInformation> dependencyAdapter(
+			ArrayList<InstructionHandle> conditionsToSatisfy, int lineNumber,
+			LocalVariableTable table, ArrayList<Nodes> nodes) {
+		ArrayList<DependencyInformation> dependencyList = new ArrayList<DependencyInformation>();
+		for (InstructionHandle dep : conditionsToSatisfy) {
+
+			IfInstruction ifInstruction = (IfInstruction) dep.getInstruction();
+			DependencyInformation dependency = new DependencyInformation();
+			dependency.dependencyNode = dep;
+			if (dep.getPosition() > lineNumber) { // If branch from a loop
+				if (ifInstruction.getTarget().getPosition() < lineNumber) {
+					dependency.true_false = true;
+				} else {
+					dependency.true_false = false;
+				}
+			} else { // Regular if branch
+				if (ifInstruction.getTarget().getPosition() > lineNumber) {
+					dependency.true_false = true;
+				} else {
+					dependency.true_false = false;
+				}
+			}
+			VariableValues varVal = getVariablesForCondition(dep, table, nodes);
+			dependency.varVal = varVal;
+			dependencyList.add(dependency);
+
+		}
+		return dependencyList;
+	}
+
 	public boolean checkTargetOnEveryPath(
 			ArrayList<ArrayList<InstructionHandle>> edges, int from, int target) {
 		// System.out.println("New Run");
-		//System.out.println("Starting at: " + from);
+		// System.out.println("Starting at: " + from);
 		ArrayList<Integer> searchQueue = new ArrayList<Integer>();
 		ArrayList<Integer> visitedQueue = new ArrayList<Integer>();
 
@@ -248,30 +339,30 @@ public class CFG {
 		// System.out.println();
 		while (!searchQueue.isEmpty()) {
 
-			 //System.out.print(searchQueue.get(0) + " , ");
+			// System.out.print(searchQueue.get(0) + " , ");
 
-			 //System.out.println("Search Queue Size: " + searchQueue.size());
+			// System.out.println("Search Queue Size: " + searchQueue.size());
 			if (searchQueue.get(0) == target) {
 				pathsCount++;
 
 				found = true;
 				neverFound = false;
 
-				 //System.out.println("Target found at: " + searchQueue.get(0));
+				// System.out.println("Target found at: " + searchQueue.get(0));
 
 			} else if (searchQueue.get(0) == -1) {
 				if (!found) {
-					 //System.out
-					 //.println("End node found before target at position: "
-					 //+ searchQueue.get(0));
+					// System.out
+					// .println("End node found before target at position: "
+					// + searchQueue.get(0));
 					isAlwaysFound = false;// System.exit(0);
 
 					return false;
 				} else {
-					 //System.out
-					 //.println("End node found After target at position: "
-					 //+ searchQueue.get(0));
-					 isAlwaysFound = false;// System.exit(0);
+					// System.out
+					// .println("End node found After target at position: "
+					// + searchQueue.get(0));
+					isAlwaysFound = false;// System.exit(0);
 					// return false;
 
 					// System.out.println("Target Found: "+((InvokeInstruction)(searchQueue.get(0).getInstruction())).getMethodName(cp));

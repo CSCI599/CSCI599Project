@@ -16,8 +16,8 @@ public class MainClass {
 		System.out.println("CFG Size: " + graphs.size());
 		int i = 1;
 		for (CFG_Graph graph : graphs) {
-			//LocalVariable[] localVariables = graph.localVariableTable
-			//		.getLocalVariableTable();
+			// LocalVariable[] localVariables = graph.localVariableTable
+			// .getLocalVariableTable();
 
 			System.out.println("Graph " + i + " byte code mapping length: "
 					+ graph.byteCode_to_sourceCode_mapping.size());
@@ -50,7 +50,7 @@ public class MainClass {
 		int node = 107;
 		System.out.println("Total Nodes: " + graphs.get(1).nodes.size());
 		ArrayList<InstructionHandle> dependencyList = cfg
-				.getDependencyInformation(graphs.get(1),node);
+				.getDependencyInformation(graphs.get(1), node);
 		System.out.println(node + " can be reached by "
 				+ graphs.get(1).reachabilityList.get(node).size()
 				+ " other nodes");
@@ -59,24 +59,44 @@ public class MainClass {
 		System.out.println("Total dependency conditions: "
 				+ dependencyList.size());
 		for (InstructionHandle dependency : dependencyList) {
-			System.out.print("\n" + dependency);			
+			System.out.print("\n" + dependency);
 		}
 		/*
-		LocalVariable[] localVariables = graphs.get(1).localVariableTable
-				.getLocalVariableTable();
+		 * LocalVariable[] localVariables = graphs.get(1).localVariableTable
+		 * .getLocalVariableTable(); System.out.println();
+		 * System.out.println("Local Variables used in main method: "); for (int
+		 * j = 0; j < localVariables.length; j++) { System.out.println("Name: "
+		 * + localVariables[j].getName() + " Index: " +
+		 * localVariables[j].getIndex() + " Signature: " +
+		 * localVariables[j].getSignature() + " Start PC: " +
+		 * localVariables[j].getStartPC()); }
+		 * 
+		 * 
+		 * System.out.println("New Analysis");
+		 * cfg.getPath(graphs.get(1).nodesMap, node);
+		 */
+		// System.out.println("Nodes: ");
+		// for(Nodes nodes : graphs.get(1).nodes){
+		// System.out.println(nodes.nodeName);
+		// }
 		System.out.println();
-		System.out.println("Local Variables used in main method: ");
-		for (int j = 0; j < localVariables.length; j++) {
-			System.out.println("Name: " + localVariables[j].getName()
-					+ " Index: " + localVariables[j].getIndex()
-					+ " Signature: " + localVariables[j].getSignature()
-					+ " Start PC: " + localVariables[j].getStartPC());
+		System.out.println("Conditions: ");
+		ArrayList<DependencyInformation> depList = cfg.dependencyAdapter(
+				dependencyList, node, graphs.get(1).localVariableTable,
+				graphs.get(1).nodes);
+
+		for (DependencyInformation dep : depList) {
+			System.out.println();
+			System.out.println("Instruction: " + dep.dependencyNode);
+			System.out.println("Must evaluate to : " + dep.true_false);
+			System.out.println("Depends on variable: "
+					+ dep.varVal.variableName);
+			System.out.println("For instruction to be TRUE, "
+					+ dep.varVal.variableName + " must be : "
+					+ dep.varVal.value);
+			System.out.println();
 		}
-		
-		
-		System.out.println("New Analysis");
-		cfg.getPath(graphs.get(1).nodesMap, node);
-		*/
+
 	}
-	
+
 }
