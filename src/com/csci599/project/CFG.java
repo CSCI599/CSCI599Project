@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
@@ -672,6 +673,46 @@ public class CFG {
 		return cfg_graphList;
 
 	}
+	
+	public void generateReachingDefInformation(
+			ArrayList<ArrayList<InstructionHandle>> edges,
+			ArrayList<Nodes> nodes) {
+		
+		boolean change = true; // there is change in out[n] in last iteration
+		
+		//For all n ∈ N 
+		//	Out[n]= empty_set
+		
+		
+		while(change){
+			change = false;
+			//For all n ∈ N :
+			for (Nodes n : nodes){
+				int outSizebefore = n.out.size();
+				
+				//In[n] = U𝑝∈𝑝𝑟𝑒𝑑(𝑛) 𝑂𝑢𝑡[𝑝]
+				for (Nodes p : n.parents) {
+					n.in.addAll(p.out);
+				}
+				
+				//Out[n] = Gen[n] ∪ (IN[n] ─ kill[n]);
+				n.out.addAll(n.gen);
+				
+				TreeSet<Definition> inMinusKill = new TreeSet<Definition>(n.in);
+				inMinusKill.removeAll(n.kill);
+				
+				n.out.addAll(inMinusKill);
+				
+				int outSizeAfter = n.out.size();
+				
+				//repeat until no change to any Out[n]:
+				if(outSizebefore != outSizeAfter)
+					change = true;
+				
+			}
+		}
+	}
+
 
 	public SortedMap<Integer, ArrayList<InstructionHandle>> generateReachabilityInformation(
 			ArrayList<ArrayList<InstructionHandle>> edges,
