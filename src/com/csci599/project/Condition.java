@@ -1,14 +1,21 @@
 package com.csci599.project;
 
+import java.util.Random;
+
 public class Condition {
+
 	public static void main(String[] args) {
 		int n = 10000;
-		int a = 0, b = 1, c = 2, d = 9, e = 10, f = 11, g = 12, h = 13;
-
-		if (b == 3 && c == 4) {
+		int a = Integer.parseInt(args[0]), b = Integer.parseInt(args[1]), c = Integer
+				.parseInt(args[2]), d = Integer.parseInt(args[3]), e = Integer
+				.parseInt(args[4]), f = Integer.parseInt(args[5]), g = Integer
+				.parseInt(args[6]), h = Integer.parseInt(args[7]);
+		String x1 = "x";
+		if (b == 3 && c == a && x1.equalsIgnoreCase("xy")) {
 			if (d == 5) {
 				if (a == 6) {
 					System.out.println("A = 6");
+					System.out.println("This is the line to execute");
 				}
 				if (a == 7) {
 					System.out.println("A != 6");
@@ -35,7 +42,6 @@ public class Condition {
 					System.out.println("E = 6");
 				} else {
 					System.out.println("E != 6");
-					System.out.println("This is the line to execute");
 				}
 			} else {
 				if (e == 7) {
@@ -68,11 +74,11 @@ public class Condition {
 		System.out.println("Start of FOR Loop");
 		for (x = 1; x < 10; x++) {
 			System.out.println("This is X FOR: " + x);
-			if(x == 8){
+			if (x == 8) {
 				break;
 			}
 		}
 		System.out.println("This is the end");
-		//Reporter.reporter();
+		// Reporter.reporter();
 	}
 }
