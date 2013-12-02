@@ -48,7 +48,7 @@ public class MainClass {
 					.println("Code: " + graph.method.getCode().toString(true));
 		}
 
-		int node = 232;
+		int node = 111; 
 
 		System.out.println("Total Nodes: " + graphs.get(1).nodes.size());
 		ArrayList<InstructionHandle> dependencyList = cfg
@@ -87,7 +87,7 @@ public class MainClass {
 		System.out.println("Conditions: ");
 		ArrayList<DependencyInformation> depList = cfg.dependencyAdapter(
 				dependencyList, node, graphs.get(1).localVariableTable,
-				graphs.get(1).nodes);
+				graphs.get(1).nodes, graphs.get(1).constantPool);
 
 		for (DependencyInformation dep : depList) {
 			System.out.println();

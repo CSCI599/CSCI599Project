@@ -20,10 +20,13 @@ import org.apache.bcel.generic.ClassGen;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.GOTO;
 import org.apache.bcel.generic.ICONST;
+import org.apache.bcel.generic.IFEQ;
+import org.apache.bcel.generic.IF_ICMPNE;
 import org.apache.bcel.generic.IfInstruction;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.InstructionList;
 import org.apache.bcel.generic.InvokeInstruction;
+import org.apache.bcel.generic.LDC;
 import org.apache.bcel.generic.LoadInstruction;
 import org.apache.bcel.generic.LocalVariableInstruction;
 import org.apache.bcel.generic.RETURN;
@@ -101,7 +104,8 @@ public class CFG {
 
 	// need to redefine it to get true results for reaching definitions
 	public ArrayList<Nodes> getParents(Nodes node,
-			ArrayList<ArrayList<InstructionHandle>> edges, ArrayList<Nodes> nodesList) {
+			ArrayList<ArrayList<InstructionHandle>> edges,
+			ArrayList<Nodes> nodesList) {
 		InstructionHandle nodeName = node.nodeName;
 		ArrayList<Nodes> parents = new ArrayList<Nodes>();
 
@@ -110,13 +114,14 @@ public class CFG {
 
 			if (edge.get(1) != null && edge.get(1).equals(nodeName)) {
 				Nodes newNode = new Nodes(edge.get(0));
-				for(Nodes node1 : nodesList){
-					if(node1.nodeName.getPosition() == newNode.nodeName.getPosition()){
+				for (Nodes node1 : nodesList) {
+					if (node1.nodeName.getPosition() == newNode.nodeName
+							.getPosition()) {
 						parents.add(node1);
 
 					}
 				}
-				//parents.add(newNode);
+				// parents.add(newNode);
 			}
 
 		}
@@ -249,16 +254,23 @@ public class CFG {
 	}
 
 	public VariableValues getVariablesForCondition(InstructionHandle condition,
-			LocalVariableTable table, ArrayList<Nodes> nodes) {
+			LocalVariableTable table, ArrayList<Nodes> nodes,
+			ConstantPoolGen constantPool) {
 		org.apache.bcel.classfile.LocalVariable[] localVariables = table
 				.getLocalVariableTable();
 		InstructionHandle conditionInstruction1 = null;
 		InstructionHandle conditionInstruction2 = null;
 		for (int i = 0; i < nodes.size(); i++) {
 			if (nodes.get(i).nodeName.getPosition() == condition.getPosition()) {
-				conditionInstruction1 = nodes.get(i - 1).nodeName;
-				conditionInstruction2 = nodes.get(i - 2).nodeName;
-				break;
+				if (nodes.get(i).nodeName.getInstruction() instanceof IF_ICMPNE) {
+					conditionInstruction1 = nodes.get(i - 1).nodeName;
+					conditionInstruction2 = nodes.get(i - 2).nodeName;
+					break;
+				} else if (nodes.get(i).nodeName.getInstruction() instanceof IFEQ) {
+					conditionInstruction1 = nodes.get(i - 2).nodeName;
+					conditionInstruction2 = nodes.get(i - 3).nodeName;
+					break;
+				}
 			}
 		}
 		/*
@@ -276,6 +288,9 @@ public class CFG {
 			value = ((ICONST) conditionInstruction1.getInstruction())
 					.getValue();
 
+		} else if (conditionInstruction1.getInstruction() instanceof LDC) {
+			value = ((LDC) conditionInstruction1.getInstruction())
+					.getValue(constantPool);
 		} else {
 			// check for variable in comparison condition
 			if (conditionInstruction1.getInstruction() instanceof LocalVariableInstruction) {
@@ -316,22 +331,25 @@ public class CFG {
 		return varVal;
 	}
 
-	public void generateReachingDef(LocalVariableTable table, 
-			ArrayList<Nodes> nodes, ArrayList<ArrayList<InstructionHandle>> edges ,ConstantPoolGen cpg) {
-		
+	public void generateReachingDef(LocalVariableTable table,
+			ArrayList<Nodes> nodes,
+			ArrayList<ArrayList<InstructionHandle>> edges, ConstantPoolGen cpg) {
+
 		final String OUTSIDECALL = "parseInt";
-		
+
 		org.apache.bcel.classfile.LocalVariable[] localVariables = table
 				.getLocalVariableTable();
-		
+
 		TreeSet<Definition> defs = new TreeSet<Definition>();
-		
+
 		InstructionHandle instruction1 = null;
 		for (int i = 0; i < nodes.size(); i++) {
-			if (nodes.get(i).nodeName.getInstruction() instanceof LocalVariableInstruction && !(nodes.get(i).nodeName.getInstruction() instanceof LoadInstruction)) {
+			if (nodes.get(i).nodeName.getInstruction() instanceof LocalVariableInstruction
+					&& !(nodes.get(i).nodeName.getInstruction() instanceof LoadInstruction)) {
 				instruction1 = nodes.get(i - 1).nodeName;
-				
-				LocalVariableInstruction si = (LocalVariableInstruction) nodes.get(i).nodeName.getInstruction();
+
+				LocalVariableInstruction si = (LocalVariableInstruction) nodes
+						.get(i).nodeName.getInstruction();
 				int line = nodes.get(i).nodeName.getPosition();
 				String varName = "";
 				int index = si.getIndex();
@@ -342,42 +360,44 @@ public class CFG {
 					}
 				}
 				boolean fromOutside = false;
-				//check if the instruction above the istore instruction is invoke for Integer.ParseInt
-				if( instruction1.getInstruction() instanceof InvokeInstruction){
-					InvokeInstruction ii = (InvokeInstruction)instruction1.getInstruction();
+				// check if the instruction above the istore instruction is
+				// invoke for Integer.ParseInt
+				if (instruction1.getInstruction() instanceof InvokeInstruction) {
+					InvokeInstruction ii = (InvokeInstruction) instruction1
+							.getInstruction();
 					String methodName = ii.getName(cpg);
-					if(methodName.equals(OUTSIDECALL)){
+					if (methodName.equals(OUTSIDECALL)) {
 						fromOutside = true;
 					}
 				}
-						
-				Definition def = new Definition(line,varName,fromOutside);
+
+				Definition def = new Definition(line, varName, fromOutside);
 				nodes.get(i).gen.add(def);
 				defs.add(def);
 			}
-			
+
 		} // end of for
-		
+
 		for (int i = 0; i < nodes.size(); i++) {
 			Nodes node = nodes.get(i);
 			for (Definition gen : node.gen) {
 				for (Definition definition : defs) {
-					if(definition.getVarName() == gen.getVarName() && definition.getLine() != gen.getLine())
+					if (definition.getVarName() == gen.getVarName()
+							&& definition.getLine() != gen.getLine())
 						node.kill.add(definition);
 				}
-					
+
 			}
 		}
-		
-		
-		//call this method to compute out for every node
+
+		// call this method to compute out for every node
 		computeReachDefInfo(edges, nodes);
-		
+
 	}
 
 	public ArrayList<DependencyInformation> dependencyAdapter(
 			ArrayList<InstructionHandle> conditionsToSatisfy, int lineNumber,
-			LocalVariableTable table, ArrayList<Nodes> nodes) {
+			LocalVariableTable table, ArrayList<Nodes> nodes, 	ConstantPoolGen constantPool) {
 		ArrayList<DependencyInformation> dependencyList = new ArrayList<DependencyInformation>();
 		for (InstructionHandle dep : conditionsToSatisfy) {
 
@@ -397,7 +417,7 @@ public class CFG {
 					dependency.true_false = false;
 				}
 			}
-			VariableValues varVal = getVariablesForCondition(dep, table, nodes);
+			VariableValues varVal = getVariablesForCondition(dep, table, nodes, constantPool);
 			dependency.varVal = varVal;
 			dependencyList.add(dependency);
 
@@ -696,32 +716,28 @@ public class CFG {
 			SortedMap<Integer, Nodes> nodesMap = new TreeMap<Integer, Nodes>();
 			for (InstructionHandle node : nodes) {
 				Nodes newNode = new Nodes(node);
-				
-				
 
-				//ArrayList<Nodes> children = getChildren(newNode, graph);
-				//ArrayList<Nodes> parents = getParents(newNode, graph);
-				//newNode.parents = parents;
-				//newNode.children = children;
-				
-				
-				//nodesMap.put(node.getPosition(), newNode);
+				// ArrayList<Nodes> children = getChildren(newNode, graph);
+				// ArrayList<Nodes> parents = getParents(newNode, graph);
+				// newNode.parents = parents;
+				// newNode.children = children;
+
+				// nodesMap.put(node.getPosition(), newNode);
 				nodesList.add(newNode);
 
-				//edgesMap.put(node.getPosition(), children);
+				// edgesMap.put(node.getPosition(), children);
 			}
-			
-			for(Nodes node: nodesList){
+
+			for (Nodes node : nodesList) {
 
 				ArrayList<Nodes> children = getChildren(node, graph);
 				ArrayList<Nodes> parents = getParents(node, graph, nodesList);
 				node.parents = parents;
 				node.children = children;
-				
+
 				nodesMap.put(node.nodeName.getPosition(), node);
 				edgesMap.put(node.nodeName.getPosition(), children);
 
-				
 			}
 
 			cfg_graph.nodesMap = nodesMap;
@@ -771,48 +787,44 @@ public class CFG {
 		return cfg_graphList;
 
 	}
-	
+
 	public void computeReachDefInfo(
 			ArrayList<ArrayList<InstructionHandle>> edges,
 			ArrayList<Nodes> nodes) {
-		
-		
-		
+
 		boolean change = true; // there is change in out[n] in last iteration
-		
-		//For all n ∈ N 
-		//	Out[n]= empty_set
-		
-		
-		while(change){
+
+		// For all n ∈ N
+		// Out[n]= empty_set
+
+		while (change) {
 			change = false;
-			//For all n ∈ N :
-			for (Nodes n : nodes){
+			// For all n ∈ N :
+			for (Nodes n : nodes) {
 				int outSizebefore = n.out.size();
-				
-				//In[n] = U𝑝∈𝑝𝑟𝑒𝑑(𝑛) 𝑂𝑢𝑡[𝑝]
+
+				// In[n] = U𝑝∈𝑝𝑟𝑒𝑑(𝑛) 𝑂𝑢𝑡[𝑝]
 				for (Nodes p : n.parents) {
 					n.in.addAll(p.out);
 				}
-				
-				//Out[n] = Gen[n] ∪ (IN[n] ─ kill[n]);
+
+				// Out[n] = Gen[n] ∪ (IN[n] ─ kill[n]);
 				n.out.addAll(n.gen);
-				
+
 				TreeSet<Definition> inMinusKill = new TreeSet<Definition>(n.in);
 				inMinusKill.removeAll(n.kill);
-				
+
 				n.out.addAll(inMinusKill);
-				
+
 				int outSizeAfter = n.out.size();
-				
-				//repeat until no change to any Out[n]:
-				if(outSizebefore != outSizeAfter)
+
+				// repeat until no change to any Out[n]:
+				if (outSizebefore != outSizeAfter)
 					change = true;
-				
+
 			}
 		}
 	}
-
 
 	public SortedMap<Integer, ArrayList<InstructionHandle>> generateReachabilityInformation(
 			ArrayList<ArrayList<InstructionHandle>> edges,
