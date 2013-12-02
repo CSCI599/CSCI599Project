@@ -6,6 +6,7 @@ public class Condition {
 
 	public static void main(String[] args) {
 		int n = 10000;
+		n = n + 4;
 		int a = Integer.parseInt(args[0]), b = Integer.parseInt(args[1]), c = Integer
 				.parseInt(args[2]), d = Integer.parseInt(args[3]), e = Integer
 				.parseInt(args[4]), f = Integer.parseInt(args[5]), g = Integer

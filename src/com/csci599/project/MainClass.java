@@ -2,6 +2,7 @@ package com.csci599.project;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.TreeSet;
 
 import org.apache.bcel.classfile.LocalVariable;
 import org.apache.bcel.generic.InstructionHandle;
@@ -99,7 +100,9 @@ public class MainClass {
 					+ dep.varVal.value);
 			System.out.println();
 		}
-
+		
+		cfg.generateReachingDef(graphs.get(1).localVariableTable, graphs.get(1).nodes, graphs.get(1).edges, graphs.get(1).constantPool);
+		int x = 1;
 		//System.out.println();
 		//System.out.println("==================CONDITION CHECK===================");
 		//System.out.println(cfg.checkTargetOnEveryPath(graphs.get(1).edges, 0, 111));

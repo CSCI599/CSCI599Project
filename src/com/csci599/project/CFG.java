@@ -20,16 +20,14 @@ import org.apache.bcel.generic.ClassGen;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.GOTO;
 import org.apache.bcel.generic.ICONST;
-import org.apache.bcel.generic.ILOAD;
 import org.apache.bcel.generic.IfInstruction;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.InstructionList;
 import org.apache.bcel.generic.InvokeInstruction;
+import org.apache.bcel.generic.LoadInstruction;
 import org.apache.bcel.generic.LocalVariableInstruction;
 import org.apache.bcel.generic.RETURN;
 import org.apache.bcel.generic.Select;
-
-import com.sun.org.apache.bcel.internal.classfile.LocalVariable;
 
 public class CFG {
 	protected static final String header = "digraph control_flow_graph {\n\n\tnode [shape = rectangle]; entry exit;\n\tnode [shape = circle];\n\n";
@@ -101,6 +99,7 @@ public class CFG {
 		return children;
 	}
 
+	// need to redefine it to get true results for reaching definitions
 	public ArrayList<Nodes> getParents(Nodes node,
 			ArrayList<ArrayList<InstructionHandle>> edges) {
 		InstructionHandle nodeName = node.nodeName;
@@ -309,6 +308,65 @@ public class CFG {
 		varVal.value = value;
 
 		return varVal;
+	}
+
+	public void generateReachingDef(LocalVariableTable table, 
+			ArrayList<Nodes> nodes, ArrayList<ArrayList<InstructionHandle>> edges ,ConstantPoolGen cpg) {
+		
+		final String OUTSIDECALL = "parseInt";
+		
+		org.apache.bcel.classfile.LocalVariable[] localVariables = table
+				.getLocalVariableTable();
+		
+		TreeSet<Definition> defs = new TreeSet<Definition>();
+		
+		InstructionHandle instruction1 = null;
+		for (int i = 0; i < nodes.size(); i++) {
+			if (nodes.get(i).nodeName.getInstruction() instanceof LocalVariableInstruction && !(nodes.get(i).nodeName.getInstruction() instanceof LoadInstruction)) {
+				instruction1 = nodes.get(i - 1).nodeName;
+				
+				LocalVariableInstruction si = (LocalVariableInstruction) nodes.get(i).nodeName.getInstruction();
+				int line = nodes.get(i).nodeName.getPosition();
+				String varName = "";
+				int index = si.getIndex();
+				for (org.apache.bcel.classfile.LocalVariable var : localVariables) {
+					if (var.getIndex() == index) {
+						varName = var.getName();
+						break;
+					}
+				}
+				boolean fromOutside = false;
+				//check if the instruction above the istore instruction is invoke for Integer.ParseInt
+				if( instruction1.getInstruction() instanceof InvokeInstruction){
+					InvokeInstruction ii = (InvokeInstruction)instruction1.getInstruction();
+					String methodName = ii.getName(cpg);
+					if(methodName.equals(OUTSIDECALL)){
+						fromOutside = true;
+					}
+				}
+						
+				Definition def = new Definition(line,varName,fromOutside);
+				nodes.get(i).gen.add(def);
+				defs.add(def);
+			}
+			
+		} // end of for
+		
+		for (int i = 0; i < nodes.size(); i++) {
+			Nodes node = nodes.get(i);
+			for (Definition gen : node.gen) {
+				for (Definition definition : defs) {
+					if(definition.getVarName() == gen.getVarName() && definition.getLine() != gen.getLine())
+						node.kill.add(definition);
+				}
+					
+			}
+		}
+		
+		
+		//call this method to compute out for every node
+		computeReachDefInfo(edges, nodes);
+		
 	}
 
 	public ArrayList<DependencyInformation> dependencyAdapter(
@@ -689,9 +747,11 @@ public class CFG {
 
 	}
 	
-	public void generateReachingDefInformation(
+	public void computeReachDefInfo(
 			ArrayList<ArrayList<InstructionHandle>> edges,
 			ArrayList<Nodes> nodes) {
+		
+		
 		
 		boolean change = true; // there is change in out[n] in last iteration
 		
