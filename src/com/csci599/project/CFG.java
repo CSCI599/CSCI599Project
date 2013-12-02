@@ -101,7 +101,7 @@ public class CFG {
 
 	// need to redefine it to get true results for reaching definitions
 	public ArrayList<Nodes> getParents(Nodes node,
-			ArrayList<ArrayList<InstructionHandle>> edges) {
+			ArrayList<ArrayList<InstructionHandle>> edges, ArrayList<Nodes> nodesList) {
 		InstructionHandle nodeName = node.nodeName;
 		ArrayList<Nodes> parents = new ArrayList<Nodes>();
 
@@ -110,7 +110,13 @@ public class CFG {
 
 			if (edge.get(1) != null && edge.get(1).equals(nodeName)) {
 				Nodes newNode = new Nodes(edge.get(0));
-				parents.add(newNode);
+				for(Nodes node1 : nodesList){
+					if(node1.nodeName.getPosition() == newNode.nodeName.getPosition()){
+						parents.add(node1);
+
+					}
+				}
+				//parents.add(newNode);
 			}
 
 		}
@@ -690,13 +696,32 @@ public class CFG {
 			SortedMap<Integer, Nodes> nodesMap = new TreeMap<Integer, Nodes>();
 			for (InstructionHandle node : nodes) {
 				Nodes newNode = new Nodes(node);
-				ArrayList<Nodes> children = getChildren(newNode, graph);
-				ArrayList<Nodes> parents = getParents(newNode, graph);
-				newNode.parents = parents;
-				newNode.children = children;
+				
+				
+
+				//ArrayList<Nodes> children = getChildren(newNode, graph);
+				//ArrayList<Nodes> parents = getParents(newNode, graph);
+				//newNode.parents = parents;
+				//newNode.children = children;
+				
+				
+				//nodesMap.put(node.getPosition(), newNode);
 				nodesList.add(newNode);
-				edgesMap.put(node.getPosition(), children);
-				nodesMap.put(node.getPosition(), newNode);
+
+				//edgesMap.put(node.getPosition(), children);
+			}
+			
+			for(Nodes node: nodesList){
+
+				ArrayList<Nodes> children = getChildren(node, graph);
+				ArrayList<Nodes> parents = getParents(node, graph, nodesList);
+				node.parents = parents;
+				node.children = children;
+				
+				nodesMap.put(node.nodeName.getPosition(), node);
+				edgesMap.put(node.nodeName.getPosition(), children);
+
+				
 			}
 
 			cfg_graph.nodesMap = nodesMap;

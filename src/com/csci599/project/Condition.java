@@ -16,7 +16,6 @@ public class Condition {
 			if (d == 5) {
 				if (a == 6) {
 					System.out.println("A = 6");
-					System.out.println("This is the line to execute");
 				}
 				if (a == 7) {
 					System.out.println("A != 6");
@@ -41,6 +40,7 @@ public class Condition {
 				e = n + 1 * (a / 4);
 				if (e == 6) {
 					System.out.println("E = 6");
+					System.out.println("This is the line to execute");
 				} else {
 					System.out.println("E != 6");
 				}

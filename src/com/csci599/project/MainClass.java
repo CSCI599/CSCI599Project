@@ -48,8 +48,8 @@ public class MainClass {
 					.println("Code: " + graph.method.getCode().toString(true));
 		}
 
-		int node = 116;
-		
+		int node = 232;
+
 		System.out.println("Total Nodes: " + graphs.get(1).nodes.size());
 		ArrayList<InstructionHandle> dependencyList = cfg
 				.getDependencyInformation(graphs.get(1), node);
@@ -63,7 +63,7 @@ public class MainClass {
 		for (InstructionHandle dependency : dependencyList) {
 			System.out.print("\n" + dependency);
 		}
-		
+
 		/*
 		 * LocalVariable[] localVariables = graphs.get(1).localVariableTable
 		 * .getLocalVariableTable(); System.out.println();
@@ -82,7 +82,7 @@ public class MainClass {
 		// for(Nodes nodes : graphs.get(1).nodes){
 		// System.out.println(nodes.nodeName);
 		// }
-		
+
 		System.out.println();
 		System.out.println("Conditions: ");
 		ArrayList<DependencyInformation> depList = cfg.dependencyAdapter(
@@ -98,17 +98,37 @@ public class MainClass {
 			System.out.println("For instruction to be TRUE, "
 					+ dep.varVal.variableName + " must be : "
 					+ dep.varVal.value);
+
+			int loc = dep.dependencyNode.getPosition();
+			
+			cfg.generateReachingDef(graphs.get(1).localVariableTable,
+					graphs.get(1).nodes, graphs.get(1).edges,
+					graphs.get(1).constantPool);
+			
+			Nodes node1 = graphs.get(1).nodesMap.get(loc);
+			boolean isOutisdeDefn = true;
+			for (Definition def : node1.out) {
+				if (def.getVarName().equalsIgnoreCase(dep.varVal.variableName)
+						&& (!def.isOutsideDef())) {
+					isOutisdeDefn = false;
+					System.out
+							.println("The variable "
+									+ dep.varVal.variableName
+									+ " does not come from outside. It is redefined at position: "
+									+ def.getLine());
+				}
+			}
+			System.out.println();
+
 			System.out.println();
 		}
+
 		
-		cfg.generateReachingDef(graphs.get(1).localVariableTable, graphs.get(1).nodes, graphs.get(1).edges, graphs.get(1).constantPool);
 		int x = 1;
-		//System.out.println();
-		//System.out.println("==================CONDITION CHECK===================");
-		//System.out.println(cfg.checkTargetOnEveryPath(graphs.get(1).edges, 0, 111));
+		// System.out.println();
+		// System.out.println("==================CONDITION CHECK===================");
+		// System.out.println(cfg.checkTargetOnEveryPath(graphs.get(1).edges, 0,
+		// 111));
 	}
-	
-	
-	
 
 }
