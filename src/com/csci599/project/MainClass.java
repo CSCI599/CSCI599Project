@@ -11,19 +11,34 @@ public class MainClass {
 
 	public static void main(String[] args) throws IOException {
 
+		if (args.length < 4) {
+			System.out.println("Expected 4 arguments");
+			System.out.println("1. Line number to run");
+			System.out.println("2. Path to class file");
+			System.out
+					.println("3. Name of class file (without .class extension");
+			System.out.println("4. Name of the method");
+			System.exit(0);
+		}
 		CFG cfg = new CFG();
-		ArrayList<CFG_Graph> graphs = cfg.cfgMaker("bin/com/csci599/project/",
-				"Condition");
-		System.out.println("CFG Size: " + graphs.size());
-		int i = 1;
-		for (CFG_Graph graph : graphs) {
-			// LocalVariable[] localVariables = graph.localVariableTable
-			// .getLocalVariableTable();
+		int lineNumber = Integer.parseInt(args[0]);
 
+		String classPath = args[1];
+		String className = args[2];
+		String methodName = args[3];
+
+		ArrayList<CFG_Graph> graphs = cfg.cfgMaker(classPath, className);
+		//System.out.println("CFG Size: " + graphs.size());
+		int i = 1;
+		CFG_Graph mainGraph = new CFG_Graph();
+		for (CFG_Graph graph : graphs) {
+			if (graph.method.getName().equalsIgnoreCase(methodName)) {
+				mainGraph = graph;
+			}
+			/*
 			System.out.println("Graph " + i + " byte code mapping length: "
 					+ graph.byteCode_to_sourceCode_mapping.size());
 			i++;
-			// cfg.traverseCFG(graph.edges);
 			for (ArrayList<InstructionHandle> edge : graph.edges) {
 				if (edge.get(0) != null) {
 					System.out.print(edge.get(0).getPosition()
@@ -46,16 +61,27 @@ public class MainClass {
 			System.out.println("Method: " + graph.method.getName());
 			System.out
 					.println("Code: " + graph.method.getCode().toString(true));
+			*/
 		}
 
-		int node = 111; 
+		int node = -1;
+		for (Integer key : mainGraph.byteCode_to_sourceCode_mapping.keySet()) {
+			if (mainGraph.byteCode_to_sourceCode_mapping.get(key) == lineNumber) {
+				node = key;
+			}
+		}
+		if (node == -1) {
+			System.out.println("Cannot find the line specified");
+			System.exit(0);
+		}
 
-		System.out.println("Total Nodes: " + graphs.get(1).nodes.size());
+		System.out.println();
+		System.out.println("Total Nodes: " + mainGraph.nodes.size());
 		ArrayList<InstructionHandle> dependencyList = cfg
-				.getDependencyInformation(graphs.get(1), node);
-		System.out.println(node + " can be reached by "
-				+ graphs.get(1).reachabilityList.get(node).size()
-				+ " other nodes");
+				.getDependencyInformation(mainGraph, node);
+		System.out.println(node + "(line number " + lineNumber + ")"
+				+ " can be reached by "
+				+ mainGraph.reachabilityList.get(node).size() + " other nodes");
 		System.out.println("Node at position " + node
 				+ " depends on the following conditions ");
 		System.out.println("Total dependency conditions: "
@@ -64,30 +90,12 @@ public class MainClass {
 			System.out.print("\n" + dependency);
 		}
 
-		/*
-		 * LocalVariable[] localVariables = graphs.get(1).localVariableTable
-		 * .getLocalVariableTable(); System.out.println();
-		 * System.out.println("Local Variables used in main method: "); for (int
-		 * j = 0; j < localVariables.length; j++) { System.out.println("Name: "
-		 * + localVariables[j].getName() + " Index: " +
-		 * localVariables[j].getIndex() + " Signature: " +
-		 * localVariables[j].getSignature() + " Start PC: " +
-		 * localVariables[j].getStartPC()); }
-		 * 
-		 * 
-		 * System.out.println("New Analysis");
-		 * cfg.getPath(graphs.get(1).nodesMap, node);
-		 */
-		// System.out.println("Nodes: ");
-		// for(Nodes nodes : graphs.get(1).nodes){
-		// System.out.println(nodes.nodeName);
-		// }
-
+		System.out.println();
 		System.out.println();
 		System.out.println("Conditions: ");
 		ArrayList<DependencyInformation> depList = cfg.dependencyAdapter(
-				dependencyList, node, graphs.get(1).localVariableTable,
-				graphs.get(1).nodes, graphs.get(1).constantPool);
+				dependencyList, node, mainGraph.localVariableTable,
+				graphs.get(1).nodes, mainGraph.constantPool);
 
 		for (DependencyInformation dep : depList) {
 			System.out.println();
@@ -98,14 +106,15 @@ public class MainClass {
 			System.out.println("For instruction to be TRUE, "
 					+ dep.varVal.variableName + " must be : "
 					+ dep.varVal.value);
-
+			System.out.println("Source code line number: "
+					+ mainGraph.byteCode_to_sourceCode_mapping
+							.get(dep.dependencyNode.getPosition()));
 			int loc = dep.dependencyNode.getPosition();
-			
-			cfg.generateReachingDef(graphs.get(1).localVariableTable,
-					graphs.get(1).nodes, graphs.get(1).edges,
-					graphs.get(1).constantPool);
-			
-			Nodes node1 = graphs.get(1).nodesMap.get(loc);
+
+			cfg.generateReachingDef(mainGraph.localVariableTable,
+					mainGraph.nodes, mainGraph.edges, mainGraph.constantPool);
+
+			Nodes node1 = mainGraph.nodesMap.get(loc);
 			boolean isOutisdeDefn = true;
 			for (Definition def : node1.out) {
 				if (def.getVarName().equalsIgnoreCase(dep.varVal.variableName)
@@ -119,16 +128,8 @@ public class MainClass {
 				}
 			}
 			System.out.println();
-
-			System.out.println();
 		}
 
-		
-		int x = 1;
-		// System.out.println();
-		// System.out.println("==================CONDITION CHECK===================");
-		// System.out.println(cfg.checkTargetOnEveryPath(graphs.get(1).edges, 0,
-		// 111));
 	}
 
 }

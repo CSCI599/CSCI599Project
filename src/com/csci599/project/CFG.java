@@ -21,6 +21,8 @@ import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.GOTO;
 import org.apache.bcel.generic.ICONST;
 import org.apache.bcel.generic.IFEQ;
+import org.apache.bcel.generic.IF_ICMPGT;
+import org.apache.bcel.generic.IF_ICMPLT;
 import org.apache.bcel.generic.IF_ICMPNE;
 import org.apache.bcel.generic.IfInstruction;
 import org.apache.bcel.generic.InstructionHandle;
@@ -31,6 +33,8 @@ import org.apache.bcel.generic.LoadInstruction;
 import org.apache.bcel.generic.LocalVariableInstruction;
 import org.apache.bcel.generic.RETURN;
 import org.apache.bcel.generic.Select;
+
+import com.sun.org.apache.bcel.internal.generic.IF_ICMPGE;
 
 public class CFG {
 	protected static final String header = "digraph control_flow_graph {\n\n\tnode [shape = rectangle]; entry exit;\n\tnode [shape = circle];\n\n";
@@ -174,11 +178,11 @@ public class CFG {
 			}
 		}
 
-		System.out.println("Following branches are always executed: ");
-		for (InstructionHandle handle : alwaysExecutedBranches) {
-			System.out.println(handle);
-		}
-
+		/*
+		 * System.out.println("Following branches are always executed: "); for
+		 * (InstructionHandle handle : alwaysExecutedBranches) {
+		 * System.out.println(handle); }
+		 */
 		if (alwaysExecutedBranches.size() > 1) {
 			int minDiff = 1000;
 			InstructionHandle closestInstruction = alwaysExecutedBranches
@@ -266,6 +270,22 @@ public class CFG {
 					conditionInstruction1 = nodes.get(i - 1).nodeName;
 					conditionInstruction2 = nodes.get(i - 2).nodeName;
 					break;
+				} else if (nodes.get(i).nodeName.getInstruction() instanceof IF_ICMPGT) {
+					conditionInstruction1 = nodes.get(i - 1).nodeName;
+					conditionInstruction2 = nodes.get(i - 2).nodeName;
+					break;
+				} else if (nodes.get(i).nodeName.getInstruction() instanceof IF_ICMPLT) {
+					conditionInstruction1 = nodes.get(i - 1).nodeName;
+					conditionInstruction2 = nodes.get(i - 2).nodeName;
+					break;
+				} else if (nodes.get(i).nodeName.getInstruction() instanceof org.apache.bcel.generic.IF_ICMPGE) {
+					conditionInstruction1 = nodes.get(i - 1).nodeName;
+					conditionInstruction2 = nodes.get(i - 2).nodeName;
+					break;
+				} else if (nodes.get(i).nodeName.getInstruction() instanceof org.apache.bcel.generic.IF_ICMPLE) {
+					conditionInstruction1 = nodes.get(i - 1).nodeName;
+					conditionInstruction2 = nodes.get(i - 2).nodeName;
+					break;
 				} else if (nodes.get(i).nodeName.getInstruction() instanceof IFEQ) {
 					conditionInstruction1 = nodes.get(i - 2).nodeName;
 					conditionInstruction2 = nodes.get(i - 3).nodeName;
@@ -273,13 +293,9 @@ public class CFG {
 				}
 			}
 		}
-		/*
-		 * if(conditionInstruction1 !=null && conditionInstruction2 != null){
-		 * System.out.println(condition);
-		 * System.out.println(conditionInstruction1);
-		 * System.out.println(conditionInstruction2); }
-		 */
+
 		Object value = null;
+
 		if (conditionInstruction1.getInstruction() instanceof BIPUSH) {
 			value = ((BIPUSH) conditionInstruction1.getInstruction())
 					.getValue();
@@ -397,7 +413,8 @@ public class CFG {
 
 	public ArrayList<DependencyInformation> dependencyAdapter(
 			ArrayList<InstructionHandle> conditionsToSatisfy, int lineNumber,
-			LocalVariableTable table, ArrayList<Nodes> nodes, 	ConstantPoolGen constantPool) {
+			LocalVariableTable table, ArrayList<Nodes> nodes,
+			ConstantPoolGen constantPool) {
 		ArrayList<DependencyInformation> dependencyList = new ArrayList<DependencyInformation>();
 		for (InstructionHandle dep : conditionsToSatisfy) {
 
@@ -417,7 +434,8 @@ public class CFG {
 					dependency.true_false = false;
 				}
 			}
-			VariableValues varVal = getVariablesForCondition(dep, table, nodes, constantPool);
+			VariableValues varVal = getVariablesForCondition(dep, table, nodes,
+					constantPool);
 			dependency.varVal = varVal;
 			dependencyList.add(dependency);
 

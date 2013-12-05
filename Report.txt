@@ -4,6 +4,27 @@ Git Repository link: https://github.com/CSCI599/CSCI599Project
 Java version: 7
 External libraries: BCEL, Cobertura (along with any other dependency they might have).
 
+Running:
+
+The java file MainClass.java is the starting point of the analysis.
+
+It expects 4 arguments:
+
+1. Line number to run
+2. Path to class file
+3. Name of class file (without .class extension)
+4. Name of the method
+
+Understanding the output:
+
+The output contains: 
+
+1) Total nodes in the CFG
+2) Number of nodes which can reach the given line number
+3) Conditions that the line number depends on 
+4) Some detailed information about the conditions like source line number, variable and its expected value etc.
+
+
 Approach:
 
 1) Prepare CFG and reachability information (similar to the ICAs)
