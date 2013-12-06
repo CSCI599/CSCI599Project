@@ -15,6 +15,9 @@ It expects 4 arguments:
 3. Name of class file (without .class extension)
 4. Name of the method
 
+We have used Condition.java as the file we want to run the analysis on. It is a simple java file with several if statements in it.
+The analysis might not work properly on very complex classes since we were not able to include all types of "IF" comparisons.
+
 Understanding the output:
 
 The output contains: 
