@@ -14,9 +14,8 @@ public class MainClass {
 		if (args.length < 4) {
 			System.out.println("Expected 4 arguments");
 			System.out.println("1. Line number to run");
-			System.out.println("2. Path to class file");
-			System.out
-					.println("3. Name of class file (without .class extension");
+			System.out.println("2. Path to class folder");
+			System.out.println("3. Name of class file (without .class extension");
 			System.out.println("4. Name of the method");
 			System.exit(0);
 		}
